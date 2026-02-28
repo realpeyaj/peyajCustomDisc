@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.peyaj"
-version = "1.6"
+version = "1.0"
 
 repositories {
     mavenCentral()
