@@ -22,7 +22,7 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 | Java | 21+ |
 | FFmpeg | Required for non-OGG uploads |
 | WorldGuard | Optional — enables region music |
-| Geyser-Spigot | Optional — Bedrock hologram support |
+| Geyser-Spigot | Optional — Bedrock hologram & custom disc support |
 
 ## Commands
 
@@ -57,28 +57,6 @@ haproxy-support: false
 # Region music (managed via commands)
 region-music:
   spawn: "my_disc_id"
-```
-
-## API
-
-Access the API from other plugins:
-
-```kotlin
-val api = Bukkit.getServicesManager()
-    .getRegistration(PeyajDiscAPI::class.java)?.provider
-
-api?.playDisc(player, "disc_id")
-api?.stopDisc(player, "disc_id")
-api?.createDiscItem("disc_id")
-```
-
-```java
-PeyajDiscAPI api = Bukkit.getServicesManager()
-    .getRegistration(PeyajDiscAPI.class).getProvider();
-
-api.playDisc(player, "disc_id");
-api.stopDisc(player, "disc_id");
-api.createDiscItem("disc_id");
 ```
 
 ## License
