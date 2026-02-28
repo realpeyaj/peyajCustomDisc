@@ -11,8 +11,7 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 - **Loop Mode** — Shift-Right-Click any jukebox to toggle looping
 - **Region Music** — Assign discs to WorldGuard regions (auto-loops)
 - **In-Game Catalog** — Browse and collect discs via GUI
-- **Developer API** — Play, stop, and query discs programmatically
-- **Geyser Support** — Bedrock players see separate holograms at correct heights
+- **Geyser Support** — Bedrock players hear the customdisc with holograms
 
 ## Requirements
 
