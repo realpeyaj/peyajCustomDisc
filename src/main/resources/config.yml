@@ -1,0 +1,56 @@
+# peyajCustomDisc Configuration
+
+# The port for the web interface (Disc Creator).
+# Default: 8080
+# ensure this port is open/allocated on your hosting panel.
+web-port: 8080
+
+# The Public URL of this plugin's web server.
+# Used to send the resource pack to players.
+# DO NOT include trailing slash.
+# Example: "http://143.2.1.5:8080" or "https://discs.myserver.com"
+public-url: "http://localhost:8080"
+
+# Should the plugin automatically send the resource pack to players?
+auto-update-pack: true
+
+# Geyser Integration
+# Path to Geyser's 'packs' folder (relative to server root).
+# If set, the Bedrock pack will be automatically copied here.
+# Default: "plugins/Geyser-Spigot/packs"
+geyser-packs-path: "plugins/Geyser-Spigot/packs"
+
+# Should we automatically run "geyser reload" after updating the Bedrock pack?
+# WARNING: This will KICK all Bedrock players.
+# Set to 'true' if you want immediate updates and don't mind the kick.
+# Set to 'false' (Recommended) to update the file silently; players will see it on next rejoin/restart.
+auto-reload-geyser: false
+
+# Proxy / HAProxy Support
+# Set to 'true' if you are running this plugin behind a proxy (like HAProxy) that sends the PROXY protocol.
+# WARNING: If enabled, you CANNOT connect directly to the port with a browser (it will fail).
+# You MUST connect through your proxy.
+haproxy-support: false
+
+# ========================================
+# WorldGuard Region Music (Optional)
+# ========================================
+# Map WorldGuard regions to custom disc IDs.
+# When a player enters a region, the mapped disc will automatically play.
+# When they leave, the music stops.
+# 
+# Format:
+#   region-music:
+#     region_name_lowercase: "disc_id"
+#
+# Example:
+#   region-music:
+#     spawn: "background_ambient"
+#     pvp_arena: "battle_music"
+#     lobby: "chill_vibes"
+#
+# Note: Region names are case-insensitive (converted to lowercase).
+# The disc_id must match exactly with a created disc.
+
+region-music:
+  # example_region: "example_disc_id"

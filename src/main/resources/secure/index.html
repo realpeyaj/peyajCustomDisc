@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disc Creator - peyajCustomDisc</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <!-- FFmpeg Server-Side Mode -->
+    <style>
+        :root {
+            --mc-bg: #111;
+            --mc-dirt: url('https://assets.codepen.io/13471/dirt_texture.png');
+            /* Fallback/Placeholder */
+            --mc-btn: #757575;
+            --mc-btn-hover: #8f8f8f;
+            --mc-btn-border-light: #b0b0b0;
+            --mc-btn-border-dark: #454545;
+            --mc-text: #fff;
+            --mc-input-bg: #000;
+            --mc-input-border: #a0a0a0;
+        }
+
+        /* Reset & Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'VT323', monospace;
+            -webkit-font-smoothing: none;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            /* Simple CSS dirt pattern simulation */
+            background-image:
+                linear-gradient(45deg, #2b2b2b 25%, transparent 25%),
+                linear-gradient(-45deg, #2b2b2b 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #2b2b2b 75%),
+                linear-gradient(-45deg, transparent 75%, #2b2b2b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--mc-text);
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #c6c6c6;
+            padding: 4px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 10px 10px 0 #00000050;
+            position: relative;
+        }
+
+        /* Minecraft Window Inner */
+        .window-inner {
+            background-color: #c6c6c6;
+            border: 4px solid #fff;
+            border-bottom-color: #555;
+            border-right-color: #555;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #404040;
+            text-shadow: 2px 2px #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 1.5rem;
+            color: #404040;
+        }
+
+        input,
+        textarea {
+            background: #000;
+            border: 2px solid #a0a0a0;
+            border-top-color: #555;
+            border-left-color: #555;
+            color: #fff;
+            padding: 10px;
+            font-size: 1.2rem;
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #fff;
+        }
+
+        /* Custom File Input (Minecraft Button Style) */
+        .drop-zone {
+            background-color: #8b8b8b;
+            /* Darker slot background */
+            border: 2px solid #fff;
+            border-top-color: #373737;
+            border-left-color: #373737;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover {
+            background-color: #9c9c9c;
+        }
+
+        .drop-zone.dragover {
+            background-color: #5d9e5a;
+            /* Green highlight */
+        }
+
+        .drop-zone p {
+            color: #ddd;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            font-size: 1rem;
+            color: #ffff55;
+            /* Minecraft Yellow */
+            margin-top: 5px;
+        }
+
+        /* Minecraft Button */
+        .btn {
+            background-color: #7d7d7d;
+            border: 4px solid #fff;
+            border-bottom-color: #555;
+            border-right-color: #555;
+            color: #fff;
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            text-shadow: 2px 2px #000;
+            width: 100%;
+            position: relative;
+        }
+
+        .btn:hover {
+            background-color: #909090;
+            /* Initial hover highlight of button */
+            border-color: #ffffa0;
+            /* Select highlight */
+            border-bottom-color: #6e6e3f;
+            border-right-color: #6e6e3f;
+        }
+
+        .btn:active {
+            border: 4px solid #555;
+            border-bottom-color: #fff;
+            border-right-color: #fff;
+        }
+
+        .btn:disabled {
+            background-color: #444;
+            color: #888;
+            border-color: #666;
+            cursor: not-allowed;
+        }
+
+
+        .dl-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 2px solid #555;
+            padding-top: 20px;
+        }
+
+        .btn-small {
+            font-size: 1.2rem;
+            background-color: #7d7d7d;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2a2a2a;
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            color: #fff;
+            box-shadow: 4px 4px 0 #000;
+            display: none;
+            animation: slideIn 0.3s;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        #converterStatus {
+            display: none;
+            font-size: 0.9em;
+            color: #55ff55;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="toast" id="toast">Disc Created!</div>
+
+    <div class="container">
+        <div class="window-inner">
+            <header>
+                <h1>Disc Forger</h1>
+            </header>
+
+            <form id="discForm" action="/api/disc" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Disc Name</label>
+                    <input type="text" name="name" placeholder="Ex: Rush E" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Author</label>
+                    <input type="text" name="author" placeholder="Ex: Sheet Music Boss" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Lore (Tooltip)</label>
+                    <textarea name="lore" placeholder="Lines separated by enter..." rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Disc Style</label>
+                    <select name="style"
+                        style="background:#000; border:2px solid #a0a0a0; border-top-color:#555; border-left-color:#555; color:#fff; padding:10px; font-size:1.2rem; font-family:inherit;">
+                        <option value="cat">Cat (Green)</option>
+                        <option value="blocks">Blocks (Orange)</option>
+                        <option value="chirp">Chirp (Red)</option>
+                        <option value="far">Far (Green)</option>
+                        <option value="mall">Mall (Purple)</option>
+                        <option value="mellohi">Mellohi (Pink)</option>
+                        <option value="stal">Stal (Black)</option>
+                        <option value="strad">Strad (White)</option>
+                        <option value="ward">Ward (Green)</option>
+                        <option value="wait">Wait (Cyan)</option>
+                        <option value="pigstep">Pigstep (Red/Gold)</option>
+                        <option value="otherside">Otherside (Blue)</option>
+                        <option value="5">5 (Gray)</option>
+                        <option value="relic">Relic (Brown)</option>
+                        <option value="creator">Creator</option>
+                        <option value="precipice">Precipice</option>
+                        <option value="13">13 (Gold)</option>
+                        <option value="11">11 (Black/Cracked)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Audio Source</label>
+                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <p id="fileNameDisplay">Drag & Drop .mp3 or .ogg</p>
+                        <input type="file" id="fileInput" name="file" accept=".ogg,.mp3" required
+                            style="display: none;">
+                        <p class="hint">MP3s will be auto-converted!</p>
+                        <div id="converterStatus">Initializing Converter...</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cover Art (Optional)</label>
+                    <div class="drop-zone" id="dropZoneCover" onclick="document.getElementById('coverInput').click()"
+                        style="padding: 10px; border-color: #aaa;">
+                        <p id="coverNameDisplay" style="font-size: 1rem; margin:0;">Click to set Cover (PNG)</p>
+                        <input type="file" id="coverInput" name="cover" accept=".png" style="display: none;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Forge Disc</button>
+            </form>
+
+            <div class="dl-section">
+                <a href="/download/pack" style="width: 50%; text-decoration: none;">
+                    <button class="btn btn-small">Java Pack</button>
+                </a>
+                <a href="/download/geyser" style="width: 50%; text-decoration: none;">
+                    <button class="btn btn-small">Geyser Pack</button>
+                </a>
+            </div>
+
+            <div id="library">
+                <h3>Disc Inventory</h3>
+                <div id="discList">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const form = document.getElementById('discForm');
+        const toast = document.getElementById('toast');
+        const discList = document.getElementById('discList');
+        const converterStatus = document.getElementById('converterStatus');
+
+        const coverNameDisplay = document.getElementById('coverNameDisplay');
+        const coverInput = document.getElementById('coverInput');
+
+        let finalFile = null;
+        let finalCover = null;
+
+        // Fetch discs on load
+        fetchDiscs();
+
+        async function fetchDiscs() {
+            try {
+                const res = await fetch('/api/discs');
+                const data = await res.json();
+                renderDiscs(data);
+            } catch (e) {
+                discList.innerText = "Failed to load inventory.";
+            }
+        }
+
+        function renderDiscs(discs) {
+            if (discs.length === 0) {
+                discList.innerHTML = "<p style='color:#777;'>No discs forged yet.</p>";
+                return;
+            }
+            let html = "<ul style='list-style:none; padding:0;'>";
+            discs.forEach(d => {
+                html += `
+                <li style="background:#a0a0a0; border:2px solid #555; padding:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="/api/disc/${d.id}/cover" style="width:32px; height:32px; image-rendering:pixelated; border:2px solid #555; background:#111;" onerror="this.style.display='none'">
+                        <span><span style="color:#000;">${d.name}</span> <span style="color:#555; font-size:0.8em;">by ${d.author}</span></span>
+                    </div>
+                    <button class="btn btn-small" style="width:auto; padding:2px 5px; font-size:1rem; background:#cc4444;" onclick="deleteDisc('${d.id}')">X</button>
+                </li>`;
+            });
+            html += "</ul>";
+            discList.innerHTML = html;
+        }
+
+        async function deleteDisc(id) {
+            if (!confirm("Destroy this disc?")) return;
+            try {
+                const res = await fetch('/api/disc/' + id, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast("Disc Destroyed");
+                    fetchDiscs();
+                } else {
+                    showToast("Error Destroying");
+                }
+            } catch (e) {
+                showToast("Connection Error");
+            }
+        }
+
+        // --- Audio Drag & Drop ---
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            finalFile = null;
+            fileNameDisplay.innerText = file.name;
+
+            const lower = file.name.toLowerCase();
+            if (lower.endsWith('.mp3') || lower.endsWith('.ogg')) {
+                finalFile = file;
+                converterStatus.style.display = 'block';
+                converterStatus.style.color = '#55ff55';
+                converterStatus.innerText = "Ready to Upload (Server will Convert)";
+            } else {
+                alert("Only .mp3 or .ogg files allowed!");
+                fileNameDisplay.innerText = "Drag & Drop .mp3 or .ogg";
+                converterStatus.style.display = 'none';
+            }
+        }
+
+        // --- Cover Art Handling ---
+        coverInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                finalCover = e.target.files[0];
+                coverNameDisplay.innerText = "Selected: " + finalCover.name;
+            }
+        });
+
+        // --- Form Submit ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!finalFile) {
+                alert("Please select an audio file first.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Uploading & Processing...";
+            btn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('name', form.elements.name.value);
+                formData.append('author', form.elements.author.value);
+                formData.append('lore', form.elements.lore.value);
+                formData.append('style', form.elements.style.value); // NEW: Disc style
+                formData.append('file', finalFile);
+                if (finalCover) {
+                    formData.append('cover', finalCover);
+                }
+
+                const res = await fetch('/api/disc', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    showToast("Success! Disc Forged.");
+                    form.reset();
+                    fileNameDisplay.innerText = "Drag & Drop .mp3 or .ogg";
+                    coverNameDisplay.innerText = "Click to set Cover (PNG)";
+                    finalFile = null;
+                    finalCover = null;
+                    converterStatus.style.display = 'none';
+                    fetchDiscs();
+                } else {
+                    const txt = await res.text();
+                    if (res.status === 501) {
+                        alert("Server Error: FFmpeg is missing on the server.\nPlease ask the admin to install 'ffmpeg'.");
+                    } else {
+                        alert("Error: " + txt);
+                    }
+                }
+            } catch (err) {
+                showToast("Connection Error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

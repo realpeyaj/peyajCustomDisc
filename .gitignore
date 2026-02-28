@@ -1,0 +1,47 @@
+# Build
+build/
+out/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs & Text
+*.log
+*.txt
+
+# Runtime artifacts
+*.jar
+*.zip
+*.mcpack
+*.ogg
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.wma
+*.aac
+*.webm
+*.mp4
+
+# Plugin data
+discs/
+pack/
+bedrock_pack/
+temp/
+
+# Misc
+*.bak
+*.tmp
+*.swp
+*~

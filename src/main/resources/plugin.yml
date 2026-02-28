@@ -1,0 +1,17 @@
+name: peyajCustomDisc
+version: '${version}'
+main: com.peyaj.jukeboxweb.PeyajCustomDisc
+api-version: '1.21'
+prefix: peyajCustomDisc
+authors: [peyaj]
+description: Custom disc creator and manager with Web GUI, WorldGuard integration, and Developer API
+softdepend: [WorldGuard]
+permissions:
+  pjcustomdisc.admin:
+    description: Allows full access to peyajCustomDisc commands
+    default: op
+
+commands:
+  disc:
+    description: Manage custom discs
+    permission: pjcustomdisc.admin
