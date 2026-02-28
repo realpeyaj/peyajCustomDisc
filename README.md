@@ -57,7 +57,3 @@ haproxy-support: false
 region-music:
   spawn: "my_disc_id"
 ```
-
-## License
-
-All rights reserved.
