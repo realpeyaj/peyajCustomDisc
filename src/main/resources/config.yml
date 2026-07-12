@@ -7,7 +7,6 @@ web-port: 8080
 
 # The Public URL of this plugin's web server.
 # Used to send the resource pack to players.
-# DO NOT include trailing slash.
 # Example: "http://143.2.1.5:8080" or "https://discs.myserver.com"
 public-url: "http://localhost:8080"
 

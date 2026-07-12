@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.peyaj"
-version = "1.0"
+version = "2.0"
 
 repositories {
     mavenCentral()
@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.47-alpha")
     
     // WorldGuard (Optional)
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9")
@@ -56,5 +56,5 @@ tasks.processResources {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }

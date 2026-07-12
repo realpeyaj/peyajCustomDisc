@@ -17,8 +17,8 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 
 | Dependency | Version |
 |---|---|
-| Paper | 1.21+ |
-| Java | 21+ |
+| Paper | 26.x - 26.2 (latest) |
+| Java | 25+ |
 | FFmpeg | Required for non-OGG uploads |
 | WorldGuard | Optional — enables region music |
 | Geyser-Spigot | Optional — Bedrock hologram & custom disc support |
