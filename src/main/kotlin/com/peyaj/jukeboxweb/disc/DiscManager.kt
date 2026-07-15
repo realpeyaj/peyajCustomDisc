@@ -30,7 +30,23 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
         try {
             val loaded: List<CustomDisc> = mapper.readValue(discsFile)
             discs.clear()
-            loaded.forEach { discs[it.id] = it }
+            var modified = false
+            var currentMaxCmd = loaded.maxOfOrNull { it.customModelData } ?: 10000
+            if (currentMaxCmd < 10000) currentMaxCmd = 10000
+
+            loaded.forEach { d ->
+                if (d.customModelData == 0) {
+                    currentMaxCmd++
+                    val updated = d.copy(customModelData = currentMaxCmd)
+                    discs[updated.id] = updated
+                    modified = true
+                } else {
+                    discs[d.id] = d
+                }
+            }
+            if (modified) {
+                saveDiscs()
+            }
             plugin.logger.info("Loaded ${discs.size} custom discs.")
         } catch (e: Exception) {
             plugin.logger.severe("Failed to load discs.json: ${e.message}")
@@ -46,8 +62,18 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
         }
     }
 
+    fun getNextCustomModelData(): Int {
+        val maxCmd = discs.values.maxOfOrNull { it.customModelData } ?: 10000
+        return maxOf(maxCmd + 1, 10001)
+    }
+
     fun addDisc(disc: CustomDisc) {
-        discs[disc.id] = disc
+        val finalDisc = if (disc.customModelData == 0) {
+            disc.copy(customModelData = getNextCustomModelData())
+        } else {
+            disc
+        }
+        discs[finalDisc.id] = finalDisc
         saveDiscs()
     }
     
@@ -80,9 +106,22 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
         meta.displayName(Component.text(disc.name).color(NamedTextColor.AQUA))
         
         val loreLines = mutableListOf<Component>()
-        loreLines.add(Component.text(disc.author).color(NamedTextColor.GRAY))
-        disc.lore.forEach { line ->
-            loreLines.add(Component.text(line).color(NamedTextColor.DARK_GRAY))
+        loreLines.add(Component.text("Artist: ${disc.author}", NamedTextColor.YELLOW))
+        
+        if (disc.durationSeconds > 0) {
+            val mins = disc.durationSeconds / 60
+            val secs = disc.durationSeconds % 60
+            val durStr = String.format("%d:%02d", mins, secs)
+            loreLines.add(Component.text("Duration: $durStr", NamedTextColor.GRAY))
+        }
+        
+        loreLines.add(Component.text("Style: ${disc.style.uppercase().replace("_", " ")}", NamedTextColor.DARK_GRAY))
+        
+        if (disc.lore.isNotEmpty()) {
+            loreLines.add(Component.empty())
+            disc.lore.forEach { line ->
+                loreLines.add(Component.text(line, NamedTextColor.DARK_AQUA))
+            }
         }
         meta.lore(loreLines)
         

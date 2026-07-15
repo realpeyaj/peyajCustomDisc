@@ -285,10 +285,11 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                 }
             }
             
-            // Note Particle
+            // Custom Particles
             if (plugin.config.getBoolean("jukebox.enable-particles", true)) {
-                val note = (0..24).random() / 24.0 
-                world.spawnParticle(Particle.NOTE, location.clone().add(0.5, 1.2, 0.5), 0, note, 0.0, 0.0, 1.0)
+                val session = activeJukeboxes[location]
+                val discId = session?.discId ?: ""
+                spawnJukeboxParticle(world, location, discId)
             }
             
         }, 0L, 10L)
@@ -346,6 +347,56 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
             Sound.Source.valueOf(categoryStr.uppercase())
         } catch (e: Exception) {
             Sound.Source.RECORD
+        }
+    }
+
+    private fun spawnJukeboxParticle(world: org.bukkit.World, location: Location, discId: String) {
+        val configType = plugin.config.getString("jukebox.particle-type", "MATCH") ?: "MATCH"
+        val disc = plugin.discManager.getDisc(discId)
+        val style = disc?.style?.lowercase() ?: "cat"
+        
+        val particleType = if (configType.equals("MATCH", ignoreCase = true)) {
+            when (style) {
+                "pigstep", "lava_chicken", "11" -> org.bukkit.Particle.FLAME
+                "otherside", "5" -> org.bukkit.Particle.SOUL
+                "creator", "relic" -> {
+                    try {
+                        org.bukkit.Particle.valueOf("ENCHANT")
+                    } catch (e: Exception) {
+                        try {
+                            org.bukkit.Particle.valueOf("ENCHANTING_TABLE")
+                        } catch (e2: Exception) {
+                            org.bukkit.Particle.NOTE
+                        }
+                    }
+                }
+                "tears" -> org.bukkit.Particle.SPLASH
+                else -> org.bukkit.Particle.NOTE
+            }
+        } else {
+            try {
+                org.bukkit.Particle.valueOf(configType.uppercase())
+            } catch (e: Exception) {
+                org.bukkit.Particle.NOTE
+            }
+        }
+
+        val spawnLoc = location.clone().add(0.5, 1.2, 0.5)
+        if (particleType == org.bukkit.Particle.NOTE) {
+            val note = (0..24).random() / 24.0
+            world.spawnParticle(org.bukkit.Particle.NOTE, spawnLoc, 0, note, 0.0, 0.0, 1.0)
+        } else {
+            try {
+                if (particleType.name == "ENCHANT" || particleType.name == "ENCHANTING_TABLE") {
+                    world.spawnParticle(particleType, spawnLoc, 3, 0.2, 0.2, 0.2, 0.1)
+                } else {
+                    world.spawnParticle(particleType, spawnLoc, 2, 0.15, 0.15, 0.15, 0.02)
+                }
+            } catch (e: Exception) {
+                // Fallback
+                val note = (0..24).random() / 24.0
+                world.spawnParticle(org.bukkit.Particle.NOTE, spawnLoc, 0, note, 0.0, 0.0, 1.0)
+            }
         }
     }
 }

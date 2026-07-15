@@ -72,6 +72,14 @@ class PeyajCustomDisc : JavaPlugin() {
         )
         logger.info("PeyajDiscAPI registered for developers!")
         
+        // bStats Metrics
+        try {
+            org.bstats.bukkit.Metrics(this, 22442)
+            logger.info("bStats metrics enabled.")
+        } catch (e: Exception) {
+            logger.warning("Failed to initialize bStats: ${e.message}")
+        }
+        
         // Initialize WebServer
         webServer = WebServer(this)
         val port = config.getInt("web-port", 8080)

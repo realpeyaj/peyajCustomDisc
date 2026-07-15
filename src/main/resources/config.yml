@@ -69,4 +69,14 @@ jukebox:
   range: 64.0
   # Enable continuous green musical note particles while custom music plays in jukeboxes
   enable-particles: true
+  # Particle type/style. Options: NOTE, HEART, FLAME, CLOUD, SCULK_SOUL, etc.
+  # Use "MATCH" to automatically choose particles based on disc style.
+  particle-type: "MATCH"
+
+# ========================================
+# Catalog Settings
+# ========================================
+catalog:
+  # Duration in seconds for preview playback when middle-clicked or right-clicked in catalog GUI
+  preview-duration: 15
 

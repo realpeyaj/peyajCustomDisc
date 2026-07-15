@@ -2,7 +2,7 @@ import org.gradle.api.attributes.java.TargetJvmVersion
 
 plugins {
     kotlin("jvm") version "2.0.21"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "8.3.0"
 }
 
 group = "com.peyaj"
@@ -17,6 +17,7 @@ repositories {
     maven("https://jitpack.io")
     maven("https://maven.lavalink.dev/snapshots")
     maven("https://maven.enginehub.org/repo/") // WorldGuard/WorldEdit
+    maven("https://repo.codemc.org/repository/maven-public/")
 }
 
 dependencies {
@@ -34,6 +35,7 @@ dependencies {
     implementation("net.kyori:adventure-text-minimessage:4.17.0")
     implementation("org.apache.commons:commons-compress:1.26.0")
     implementation("org.tukaani:xz:1.9")
+    implementation("org.bstats:bstats-bukkit:3.0.2")
 }
 
 configurations.all {
@@ -46,6 +48,7 @@ tasks.shadowJar {
     exclude("natives/win*/**")
     exclude("natives/darwin*/**")
     exclude("natives/mac*/**")
+    relocate("org.bstats", "com.peyaj.jukeboxweb.bstats")
 }
 
 tasks.processResources {

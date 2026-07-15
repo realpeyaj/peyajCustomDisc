@@ -55,6 +55,7 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
         bedrockSoundsDir.mkdirs()
 
         val soundDefinitions = mutableMapOf<String, Any>()
+        val overridesMap = mutableMapOf<String, MutableList<Map<String, Any>>>()
 
         for (disc in discs) {
             // ... (File finding logic same as before)
@@ -113,6 +114,59 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
                 )
                 soundDefinitions["peyajcustomdisc:disc.${disc.id}"] = bedrockEntry
             } 
+            
+            // Handle texture overrides
+            val textureFile = File(plugin.dataFolder, "discs/${disc.id}.png")
+            if (textureFile.exists() && disc.customModelData != 0) {
+                try {
+                    val packTextureDir = File(packFolder, "assets/peyajcustomdisc/textures/item/disc")
+                    packTextureDir.mkdirs()
+                    val targetTexture = File(packTextureDir, "${disc.id}.png")
+                    textureFile.copyTo(targetTexture, overwrite = true)
+
+                    val packModelDir = File(packFolder, "assets/peyajcustomdisc/models/item/disc")
+                    packModelDir.mkdirs()
+                    val modelJson = File(packModelDir, "${disc.id}.json")
+                    val modelData = mapOf(
+                        "parent" to "minecraft:item/generated",
+                        "textures" to mapOf(
+                            "layer0" to "peyajcustomdisc:item/disc/${disc.id}"
+                        )
+                    )
+                    mapper.writerWithDefaultPrettyPrinter().writeValue(modelJson, modelData)
+
+                    val styleName = "music_disc_${disc.style.lowercase()}"
+                    val overrideEntry = mapOf(
+                        "predicate" to mapOf(
+                            "custom_model_data" to disc.customModelData
+                        ),
+                        "model" to "peyajcustomdisc:item/disc/${disc.id}"
+                    )
+                    overridesMap.computeIfAbsent(styleName) { mutableListOf() }.add(overrideEntry)
+                } catch (e: Exception) {
+                    plugin.logger.warning("Failed to generate model overrides for ${disc.id}: ${e.message}")
+                }
+            }
+        }
+
+        // --- Write minecraft model overrides ---
+        val mcModelsDir = File(packFolder, "assets/minecraft/models/item")
+        mcModelsDir.mkdirs()
+        overridesMap.forEach { (styleName, overrides) ->
+            try {
+                overrides.sortBy { (it["predicate"] as Map<*, *>)["custom_model_data"] as Int }
+                val modelFile = File(mcModelsDir, "$styleName.json")
+                val modelData = mapOf(
+                    "parent" to "minecraft:item/generated",
+                    "textures" to mapOf(
+                        "layer0" to "minecraft:item/$styleName"
+                    ),
+                    "overrides" to overrides
+                )
+                mapper.writerWithDefaultPrettyPrinter().writeValue(modelFile, modelData)
+            } catch (e: Exception) {
+                plugin.logger.severe("Failed to write model override for $styleName: ${e.message}")
+            }
         }
 
         // --- Finalize Java Pack ---
