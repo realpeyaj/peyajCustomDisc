@@ -27,6 +27,7 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 
 | Command | Description |
 |---|---|
+| `/disc add <id> <url> <name> <author> [style]` | Download, convert, and add a custom disc (use underscores for spaces) |
 | `/disc give <player> <id>` | Give a custom disc |
 | `/disc list` | List all discs |
 | `/disc play <id>` | Play a disc (portable) |
@@ -56,4 +57,12 @@ haproxy-support: false
 # Region music (managed via commands)
 region-music:
   spawn: "my_disc_id"
+
+# Jukebox settings
+jukebox:
+  volume: 1.0
+  pitch: 1.0
+  sound-category: "RECORDS"
+  range: 64.0
+  enable-particles: true
 ```
