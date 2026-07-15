@@ -55,6 +55,10 @@ This downloads `rushe.mp3` in the background, converts it to OGG using FFmpeg, r
 
 ## Configuration
 
+> [!IMPORTANT]
+> **Setup the configuration FIRST before creating or adding custom discs!**
+> You must configure `public-url` to point to your server's public IP/Domain and port. The plugin uses this URL to compile the resource pack download URL sent to players. If you add songs before setting this up, players will be sent resource pack downloads pointing to `localhost`, which will fail.
+
 ```yaml
 # config.yml
 web-port: 8080
