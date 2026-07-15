@@ -1,7 +1,7 @@
 name: peyajCustomDisc
 version: '${version}'
 main: com.peyaj.jukeboxweb.PeyajCustomDisc
-api-version: '26.2'
+api-version: '1.21'
 prefix: peyajCustomDisc
 authors: [peyaj]
 description: Custom disc creator and manager with Web GUI, WorldGuard integration, and Developer API
