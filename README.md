@@ -59,9 +59,6 @@ This downloads `rushe.mp3` in the background, converts it to OGG using FFmpeg, r
 > **Setup the configuration FIRST before creating or adding custom discs!**
 > 1. Configure **`web-port`** to an open/allocated port on your server host (this is the internal port the web server binds to).
 > 2. Configure **`public-url`** to point to your server's public IP/Domain and port. The plugin uses this URL to compile the resource pack download URL sent to players. If you add songs before setting this up, players will be sent resource pack downloads pointing to `localhost`, which will fail.
-> 
-> **Separate Ports / Proxying:**
-> If you are running the server behind a reverse proxy or on a shared host panel (like Pterodactyl), the port used in your **`public-url`** (e.g. `80` or `443` or your public port allocation) can be completely different from the internal bind port in **`web-port`**.
 
 > [!WARNING]
 > **Do NOT use your Minecraft server port (default `25565`) for `web-port`!**
