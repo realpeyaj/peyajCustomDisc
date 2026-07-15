@@ -63,6 +63,11 @@ This downloads `rushe.mp3` in the background, converts it to OGG using FFmpeg, r
 > **Separate Ports / Proxying:**
 > If you are running the server behind a reverse proxy or on a shared host panel (like Pterodactyl), the port used in your **`public-url`** (e.g. `80` or `443` or your public port allocation) can be completely different from the internal bind port in **`web-port`**.
 
+> [!WARNING]
+> **Do NOT use your Minecraft server port (default `25565`) for `web-port`!**
+> The web interface and download server run as a separate service on your host. You must assign/allocate a completely separate port for **`web-port`** (e.g. `8080`, `25566`, etc.). Using the Minecraft port will cause a `BindException` (Address already in use) and the plugin will fail to enable.
+
+
 
 ```yaml
 # config.yml
