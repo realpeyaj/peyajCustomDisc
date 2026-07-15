@@ -1,6 +1,7 @@
 # Build
 build/
 out/
+/bin/
 .gradle/
 
 # IDE
@@ -35,10 +36,10 @@ desktop.ini
 *.mp4
 
 # Plugin data
-discs/
-pack/
-bedrock_pack/
-temp/
+/discs/
+/pack/
+/bedrock_pack/
+/temp/
 
 # Misc
 *.bak

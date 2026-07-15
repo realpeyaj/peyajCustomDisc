@@ -124,7 +124,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                 // Stop the specific vanilla sound only (not ALL record sounds!)
                 val vanillaSound = getVanillaSound(record.type)
                 if (vanillaSound != null) {
-                    block.world.getNearbyPlayers(block.location, 64.0).forEach { p ->
+                    block.world.getNearbyPlayers(block.location, getJukeboxRange()).forEach { p ->
                         p.stopSound(net.kyori.adventure.sound.SoundStop.named(vanillaSound))
                     }
                 }
@@ -134,7 +134,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                 if (discId != null) {
                     val soundKey = "peyajcustomdisc:disc.$discId"
                     block.world.playSound(
-                        Sound.sound(Key.key(soundKey), Sound.Source.RECORD, 1.0f, 1.0f),
+                        Sound.sound(Key.key(soundKey), getJukeboxCategory(), getJukeboxVolume(), getJukeboxPitch()),
                         block.location.x, block.location.y, block.location.z
                     )
                     
@@ -142,7 +142,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                     if (disc != null) {
                         val msg = Component.text("Now Playing: ${disc.name}", NamedTextColor.AQUA)
                         
-                        block.world.getNearbyPlayers(block.location, 64.0).forEach { p ->
+                        block.world.getNearbyPlayers(block.location, getJukeboxRange()).forEach { p ->
                             p.sendActionBar(msg)
                         }
                         event.player.sendMessage(Component.text("Tip: Shift-Right-Click the Jukebox to toggle Loop Mode [∞]", NamedTextColor.GRAY))
@@ -180,6 +180,9 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
             Material.MUSIC_DISC_RELIC -> "music_disc.relic"
             Material.MUSIC_DISC_CREATOR -> "music_disc.creator"
             Material.MUSIC_DISC_PRECIPICE -> "music_disc.precipice"
+            Material.MUSIC_DISC_CREATOR_MUSIC_BOX -> "music_disc.creator_music_box"
+            Material.MUSIC_DISC_TEARS -> "music_disc.tears"
+            Material.MUSIC_DISC_LAVA_CHICKEN -> "music_disc.lava_chicken"
             else -> null
         }
         return if (id != null) Key.key("minecraft", id) else null
@@ -205,7 +208,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         
         // Stop the custom disc sound for players near THIS jukebox
         val soundKey = Key.key("peyajcustomdisc:disc.$discId")
-        world.getNearbyPlayers(location, 64.0).forEach { p ->
+        world.getNearbyPlayers(location, getJukeboxRange()).forEach { p ->
             p.stopSound(net.kyori.adventure.sound.SoundStop.named(soundKey))
         }
         
@@ -270,8 +273,8 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                              world.stopSound(net.kyori.adventure.sound.SoundStop.named(key))
                              
                              world.playSound(
-                                Sound.sound(key, Sound.Source.RECORD, 1.0f, 1.0f),
-                                location.x, location.y, location.z
+                                 Sound.sound(key, getJukeboxCategory(), getJukeboxVolume(), getJukeboxPitch()),
+                                 location.x, location.y, location.z
                              )
                              session.startTime = System.currentTimeMillis()
                          } else {
@@ -283,8 +286,10 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
             }
             
             // Note Particle
-            val note = (0..24).random() / 24.0 
-            world.spawnParticle(Particle.NOTE, location.clone().add(0.5, 0.8, 0.5), 0, note, 0.0, 0.0, 1.0)
+            if (plugin.config.getBoolean("jukebox.enable-particles", true)) {
+                val note = (0..24).random() / 24.0 
+                world.spawnParticle(Particle.NOTE, location.clone().add(0.5, 1.2, 0.5), 0, note, 0.0, 0.0, 1.0)
+            }
             
         }, 0L, 10L)
 
@@ -330,5 +335,17 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         val world = location.world
         world?.getEntity(session.holoJavaUuid)?.remove()
         world?.getEntity(session.holoBedrockUuid)?.remove()
+    }
+
+    private fun getJukeboxVolume(): Float = plugin.config.getDouble("jukebox.volume", 1.0).toFloat()
+    private fun getJukeboxPitch(): Float = plugin.config.getDouble("jukebox.pitch", 1.0).toFloat()
+    private fun getJukeboxRange(): Double = plugin.config.getDouble("jukebox.range", 64.0)
+    private fun getJukeboxCategory(): Sound.Source {
+        val categoryStr = plugin.config.getString("jukebox.sound-category", "RECORDS") ?: "RECORDS"
+        return try {
+            Sound.Source.valueOf(categoryStr.uppercase())
+        } catch (e: Exception) {
+            Sound.Source.RECORD
+        }
     }
 }

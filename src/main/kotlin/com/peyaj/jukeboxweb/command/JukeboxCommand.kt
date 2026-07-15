@@ -27,6 +27,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             sender.sendMessage(Component.text("/disc region remove <region> - Remove region music", NamedTextColor.YELLOW))
             sender.sendMessage(Component.text("/disc region list - List region mappings", NamedTextColor.YELLOW))
             if (sender.hasPermission("pjcustomdisc.admin")) {
+                sender.sendMessage(Component.text("/disc add <id> <url> <name> <author> [style] - Add a custom disc", NamedTextColor.YELLOW))
                 sender.sendMessage(Component.text("/disc web - Generate Admin Login Link", NamedTextColor.RED))
             }
             return true
@@ -211,6 +212,110 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             return true
         }
 
+        if (args[0].equals("add", ignoreCase = true)) {
+            if (!sender.hasPermission("pjcustomdisc.admin")) {
+                sender.sendMessage(Component.text("No permission.", NamedTextColor.RED))
+                return true
+            }
+            if (args.size < 5) {
+                sender.sendMessage(Component.text("Usage: /disc add <id> <url> <name> <author> [style]", NamedTextColor.RED))
+                return true
+            }
+
+            val rawId = args[1].lowercase()
+            val discId = rawId.replace(Regex("[^a-z0-9]"), "_")
+            val urlStr = args[2]
+            val name = args[3].replace("_", " ")
+            val author = args[4].replace("_", " ")
+            val style = if (args.size > 5) args[5].lowercase() else "cat"
+
+            // Check if disc exists
+            if (plugin.discManager.getDisc(discId) != null) {
+                sender.sendMessage(Component.text("Disc ID '$discId' already exists.", NamedTextColor.RED))
+                return true
+            }
+
+            sender.sendMessage(Component.text("Downloading and converting disc audio in the background...", NamedTextColor.YELLOW))
+
+            plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+                try {
+                    val url = java.net.URL(urlStr)
+                    val connection = url.openConnection()
+                    connection.connectTimeout = 10000
+                    connection.readTimeout = 15000
+
+                    val filename = url.path.substringAfterLast('/', "download.mp3").lowercase()
+                    val isOgg = filename.endsWith(".ogg")
+                    val validExtensions = listOf(".mp3", ".wav", ".flac", ".m4a", ".mp4", ".wma", ".aac", ".webm")
+                    val isValidInput = isOgg || validExtensions.any { filename.endsWith(it) }
+
+                    if (!isValidInput) {
+                        sender.sendMessage(Component.text("Invalid format. Supported: .ogg (Direct), .mp3, .wav, .flac, .m4a, .mp4, .wma, .aac", NamedTextColor.RED))
+                        return@Runnable
+                    }
+
+                    val targetOgg = java.io.File(plugin.dataFolder, "discs/$discId.ogg")
+                    targetOgg.parentFile.mkdirs()
+                    var durationSeconds = 0
+
+                    if (!isOgg) {
+                        if (!com.peyaj.jukeboxweb.util.AudioConverter.isFFmpegAvailable()) {
+                            sender.sendMessage(Component.text("Conversion failed: FFmpeg not installed on server host OS.", NamedTextColor.RED))
+                            return@Runnable
+                        }
+
+                        val ext = filename.substringAfterLast('.', "tmp")
+                        val tempFile = java.io.File(plugin.dataFolder, "temp/$discId.$ext")
+                        tempFile.parentFile.mkdirs()
+
+                        connection.getInputStream().use { input ->
+                            tempFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+
+                        val result = com.peyaj.jukeboxweb.util.AudioConverter.convertToOgg(tempFile, targetOgg)
+                        tempFile.delete()
+
+                        if (!result.first) {
+                            sender.sendMessage(Component.text("Conversion Failed. Check server console.", NamedTextColor.RED))
+                            return@Runnable
+                        }
+                        durationSeconds = result.second
+                    } else {
+                        connection.getInputStream().use { input ->
+                            targetOgg.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    }
+
+                    val disc = com.peyaj.jukeboxweb.disc.CustomDisc(
+                        id = discId,
+                        name = name,
+                        author = author,
+                        lore = emptyList(),
+                        durationSeconds = durationSeconds,
+                        style = style
+                    )
+
+                    // Sync back to main thread
+                    plugin.server.scheduler.runTask(plugin, Runnable {
+                        plugin.discManager.addDisc(disc)
+                        plugin.packGenerator.buildResourcePack(plugin.discManager.getAllDiscs())
+                        com.peyaj.jukeboxweb.pack.PackUpdater.updateAllPlayers(plugin)
+
+                        sender.sendMessage(Component.text("✔ Custom disc '$discId' added successfully! Resource pack rebuilt.", NamedTextColor.GREEN))
+                    })
+                } catch (e: Exception) {
+                    sender.sendMessage(Component.text("Failed to add custom disc: ${e.message}", NamedTextColor.RED))
+                    plugin.logger.warning("Failed to add custom disc via command: ${e.message}")
+                }
+            })
+
+            return true
+        }
+
         if (args[0].equals("reload", ignoreCase = true)) {
             if (!sender.hasPermission("pjcustomdisc.admin")) {
                 sender.sendMessage(Component.text("No permission.", NamedTextColor.RED))
@@ -232,7 +337,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         if (args.size == 1) {
-            return listOf("give", "list", "play", "stop", "web", "catalog", "region", "reload").filter { it.startsWith(args[0], true) }
+            return listOf("give", "list", "play", "stop", "web", "catalog", "region", "reload", "add").filter { it.startsWith(args[0], true) }
         }
         if (args.size == 2 && args[0].equals("give", ignoreCase = true)) {
             return plugin.server.onlinePlayers.map { it.name }.filter { it.startsWith(args[1], true) }
@@ -243,6 +348,15 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
         if (args.size == 2 && args[0].equals("play", ignoreCase = true)) {
              return plugin.discManager.getAllDiscs().map { it.id }.filter { it.startsWith(args[1], true) }
         }
+        // Add command tab completion
+        if (args[0].equals("add", ignoreCase = true)) {
+            if (args.size == 2) return listOf("[id]")
+            if (args.size == 3) return listOf("[url]")
+            if (args.size == 4) return listOf("[name_with_underscores]")
+            if (args.size == 5) return listOf("[author_with_underscores]")
+            if (args.size == 6) return listOf("cat", "13", "blocks", "chirp", "far", "mall", "mellohi", "stal", "strad", "ward", "11", "wait", "otherside", "5", "pigstep", "relic", "creator", "precipice", "creator_music_box", "tears", "lava_chicken").filter { it.startsWith(args[5], true) }
+        }
+
         // Region tab completion
         if (args[0].equals("region", ignoreCase = true)) {
             if (args.size == 2) {

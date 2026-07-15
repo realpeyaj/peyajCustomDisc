@@ -53,3 +53,20 @@ haproxy-support: false
 
 region-music:
   # example_region: "example_disc_id"
+
+# ========================================
+# Jukebox Music Settings
+# ========================================
+jukebox:
+  # Default volume of the music (0.0 to 1.0)
+  volume: 1.0
+  # Default pitch of the music
+  pitch: 1.0
+  # The sound source category for custom discs.
+  # Options: MASTER, MUSIC, RECORDS, WEATHER, BLOCKS, HOSTILE, NEUTRAL, PLAYERS, AMBIENT, VOICE
+  sound-category: "RECORDS"
+  # Range radius (in blocks) for Now Playing action-bar alerts and sound propagation
+  range: 64.0
+  # Enable continuous green musical note particles while custom music plays in jukeboxes
+  enable-particles: true
+
