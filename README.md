@@ -28,6 +28,7 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 | Command | Description |
 |---|---|
 | `/disc add <id> <url> <name> <author> [style]` | Download, convert, and add a custom disc (use underscores for spaces) |
+| `/disc delete <id>` | Delete a custom disc (removes registry & deletes files) |
 | `/disc give <player> <id>` | Give a custom disc |
 | `/disc list` | List all discs |
 | `/disc play <id>` | Play a disc (portable) |
@@ -37,7 +38,13 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 | `/disc region remove <region>` | Remove region music |
 | `/disc region list` | List region mappings |
 | `/disc web` | Generate a one-time admin login link |
-| `/disc reload` | Reload config & restart web server |
+### In-Game Disc Addition Example
+
+You can add custom music discs directly in-game. To represent spaces in the track name and author, use underscores (`_`):
+```text
+/disc add rushe https://mywebsite.com/audio/rushe.mp3 Rush_E Sheet_Music_Boss relic
+```
+This downloads `rushe.mp3` in the background, converts it to OGG using FFmpeg, registers the disc under the name **"Rush E"** by **"Sheet Music Boss"**, uses the **"relic"** style texture, and regenerates the resource pack automatically.
 
 ## Permissions
 

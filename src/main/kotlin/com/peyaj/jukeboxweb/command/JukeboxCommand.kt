@@ -28,6 +28,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             sender.sendMessage(Component.text("/disc region list - List region mappings", NamedTextColor.YELLOW))
             if (sender.hasPermission("pjcustomdisc.admin")) {
                 sender.sendMessage(Component.text("/disc add <id> <url> <name> <author> [style] - Add a custom disc", NamedTextColor.YELLOW))
+                sender.sendMessage(Component.text("/disc delete <id> - Delete a custom disc", NamedTextColor.YELLOW))
                 sender.sendMessage(Component.text("/disc web - Generate Admin Login Link", NamedTextColor.RED))
             }
             return true
@@ -316,6 +317,29 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             return true
         }
 
+        if (args[0].equals("delete", ignoreCase = true) || args[0].equals("remove", ignoreCase = true)) {
+            if (!sender.hasPermission("pjcustomdisc.admin")) {
+                sender.sendMessage(Component.text("No permission.", NamedTextColor.RED))
+                return true
+            }
+            if (args.size < 2) {
+                sender.sendMessage(Component.text("Usage: /disc delete <disc_id>", NamedTextColor.RED))
+                return true
+            }
+
+            val discId = args[1]
+            val deleted = plugin.discManager.deleteDisc(discId)
+            
+            if (deleted) {
+                plugin.packGenerator.buildResourcePack(plugin.discManager.getAllDiscs())
+                com.peyaj.jukeboxweb.pack.PackUpdater.updateAllPlayers(plugin)
+                sender.sendMessage(Component.text("✔ Custom disc '$discId' deleted successfully! Resource pack rebuilt.", NamedTextColor.GREEN))
+            } else {
+                sender.sendMessage(Component.text("Disc ID '$discId' not found.", NamedTextColor.RED))
+            }
+            return true
+        }
+
         if (args[0].equals("reload", ignoreCase = true)) {
             if (!sender.hasPermission("pjcustomdisc.admin")) {
                 sender.sendMessage(Component.text("No permission.", NamedTextColor.RED))
@@ -337,7 +361,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         if (args.size == 1) {
-            return listOf("give", "list", "play", "stop", "web", "catalog", "region", "reload", "add").filter { it.startsWith(args[0], true) }
+            return listOf("give", "list", "play", "stop", "web", "catalog", "region", "reload", "add", "delete", "remove").filter { it.startsWith(args[0], true) }
         }
         if (args.size == 2 && args[0].equals("give", ignoreCase = true)) {
             return plugin.server.onlinePlayers.map { it.name }.filter { it.startsWith(args[1], true) }
@@ -379,6 +403,13 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 return plugin.discManager.getAllDiscs().map { it.id }.filter { it.startsWith(args[3], true) }
             }
         }
+        // Delete/remove command tab completion
+        if (args[0].equals("delete", ignoreCase = true) || args[0].equals("remove", ignoreCase = true)) {
+            if (args.size == 2) {
+                return plugin.discManager.getAllDiscs().map { it.id }.filter { it.startsWith(args[1], true) }
+            }
+        }
+
         return emptyList()
     }
     
