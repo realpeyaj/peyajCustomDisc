@@ -84,3 +84,8 @@ jukebox:
   range: 64.0
   enable-particles: true
 ```
+
+## Stats
+
+[![bStats](https://bstats.org/signatures/bukkit/peyajCustomDisc.svg)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
+
