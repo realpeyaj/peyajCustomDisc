@@ -87,5 +87,8 @@ jukebox:
 
 ## Stats
 
-[![bStats](https://bstats.org/signatures/bukkit/peyajCustomDisc.svg)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
+[![bStats Servers](https://img.shields.io/bstats/servers/32671?label=Servers&color=blue)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
+[![bStats Players](https://img.shields.io/bstats/players/32671?label=Players&color=green)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
+
+[![bStats Chart](https://bstats.org/signatures/bukkit/peyajCustomDisc.svg)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
 
