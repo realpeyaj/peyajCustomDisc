@@ -74,7 +74,7 @@ class PeyajCustomDisc : JavaPlugin() {
         
         // bStats Metrics
         try {
-            org.bstats.bukkit.Metrics(this, 22442)
+            org.bstats.bukkit.Metrics(this, 32671)
             logger.info("bStats metrics enabled.")
         } catch (e: Exception) {
             logger.warning("Failed to initialize bStats: ${e.message}")
