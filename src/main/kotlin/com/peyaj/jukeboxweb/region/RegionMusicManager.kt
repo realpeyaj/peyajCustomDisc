@@ -18,16 +18,7 @@ import org.bukkit.event.player.PlayerTeleportEvent
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Manages region-based music playback using WorldGuard.
- * 
- * Config format:
- * ```yaml
- * region-music:
- *   region_name: "disc_id"
- *   spawn: "background_music"
- * ```
- */
+// Manages region-based music playback using WorldGuard
 class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
 
     // Tracks which region each player is currently in (for music purposes)
@@ -87,15 +78,25 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         }
     }
     
+    // Tracks last region check timestamp per player to throttle spatial queries
+    private val lastCheckTime = ConcurrentHashMap<UUID, Long>()
+
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
-        // Optimization: Only check if player moved to a new block
         val from = event.from
         val to = event.to ?: return
         
         if (from.blockX == to.blockX && from.blockY == to.blockY && from.blockZ == to.blockZ) {
             return // Same block, skip
         }
+        
+        // Throttle WorldGuard spatial queries to at most once every 500ms per player
+        val now = System.currentTimeMillis()
+        val last = lastCheckTime[event.player.uniqueId] ?: 0L
+        if (now - last < 500L) {
+            return
+        }
+        lastCheckTime[event.player.uniqueId] = now
         
         checkPlayerRegion(event.player)
     }
@@ -104,6 +105,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     fun onPlayerTeleport(event: PlayerTeleportEvent) {
         // Check after teleport completes
         plugin.server.scheduler.runTaskLater(plugin, Runnable {
+            lastCheckTime[event.player.uniqueId] = System.currentTimeMillis()
             checkPlayerRegion(event.player)
         }, 2L)
     }
@@ -112,6 +114,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     fun onPlayerQuit(event: PlayerQuitEvent) {
         playerCurrentRegion.remove(event.player.uniqueId)
         playerMusicStartTime.remove(event.player.uniqueId)
+        lastCheckTime.remove(event.player.uniqueId)
     }
     
     private fun checkPlayerRegion(player: Player) {

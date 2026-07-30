@@ -7,17 +7,13 @@ import org.bukkit.inventory.ItemStack
 /**
  * Public API for peyajCustomDisc plugin.
  * 
- * Access via:
- * ```kotlin
+ * Access via Kotlin:
  * val api = Bukkit.getServicesManager().getRegistration(PeyajDiscAPI::class.java)?.provider
  * api?.playDisc(player, "my_disc_id")
- * ```
  * 
- * Or in Java:
- * ```java
+ * Access via Java:
  * PeyajDiscAPI api = Bukkit.getServicesManager().getRegistration(PeyajDiscAPI.class).getProvider();
  * api.playDisc(player, "my_disc_id");
- * ```
  */
 interface PeyajDiscAPI {
 

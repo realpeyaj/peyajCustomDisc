@@ -1,5 +1,8 @@
 # peyajCustomDisc
 
+[![bStats Servers](https://img.shields.io/bstats/servers/32671?label=Servers&color=blue)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
+[![bStats Players](https://img.shields.io/bstats/players/32671?label=Players&color=green)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
+
 Custom music disc plugin for Paper servers. Upload any audio file, get a playable disc.
 
 ## Features
@@ -11,15 +14,15 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 - **Loop Mode** — Shift-Right-Click any jukebox to toggle looping
 - **Region Music** — Assign discs to WorldGuard regions (auto-loops)
 - **In-Game Catalog** — Browse and collect discs via GUI
-- **Geyser Support** — Bedrock players hear the customdisc with holograms
+- **Geyser Support** — Bedrock players hear the custom disc with holograms
 
 ## Requirements
 
 | Dependency | Version |
 |---|---|
-| Paper | 26.x - 26.2 (latest) |
-| Java | 25+ |
-| FFmpeg | Required for non-OGG uploads |
+| Paper | 1.20.x - 1.21.1 (latest) |
+| Java | 21+ |
+| FFmpeg | Required for non-OGG uploads (already bundled in the plugin) |
 | WorldGuard | Optional — enables region music |
 | Geyser-Spigot | Optional — Bedrock hologram & custom disc support |
 
@@ -38,6 +41,7 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 | `/disc region remove <region>` | Remove region music |
 | `/disc region list` | List region mappings |
 | `/disc web` | Generate a one-time admin login link |
+
 ### In-Game Disc Addition Example
 
 You can add custom music discs directly in-game. To represent spaces in the track name and author, use underscores (`_`):
@@ -64,7 +68,9 @@ This downloads `rushe.mp3` in the background, converts it to OGG using FFmpeg, r
 > **Do NOT use your Minecraft server port (default `25565`) for `web-port`!**
 > The web interface and download server run as a separate service on your host. You must assign/allocate a completely separate port for **`web-port`** (e.g. `8080`, `25566`, etc.). Using the Minecraft port will cause a `BindException` (Address already in use) and the plugin will fail to enable.
 
-
+> [!WARNING]
+> **Geyser Users & Bedrock Textures**
+> If you have `auto-reload-geyser: true`, the plugin will run `/geyser reload` every time you add/delete a disc. However, Geyser has a limitation where it **cannot hot-reload new resource pack textures** while the server is running. If you create a brand new disc, Bedrock players might see it as "Paper" until you do a full server `/restart`. (If you are just replacing audio for an existing disc, a restart is not required).
 
 ```yaml
 # config.yml
@@ -86,9 +92,4 @@ jukebox:
 ```
 
 ## Stats
-
-[![bStats Servers](https://img.shields.io/bstats/servers/32671?label=Servers&color=blue)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
-[![bStats Players](https://img.shields.io/bstats/players/32671?label=Players&color=green)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
-
 [![bStats Chart](https://bstats.org/signatures/bukkit/peyajCustomDisc.svg)](https://bstats.org/plugin/bukkit/peyajCustomDisc/32671)
-

@@ -27,7 +27,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             sender.sendMessage(Component.text("/disc region remove <region> - Remove region music", NamedTextColor.YELLOW))
             sender.sendMessage(Component.text("/disc region list - List region mappings", NamedTextColor.YELLOW))
             if (sender.hasPermission("pjcustomdisc.admin")) {
-                sender.sendMessage(Component.text("/disc add <id> <url> <name> <author> [style] - Add a custom disc", NamedTextColor.YELLOW))
+                sender.sendMessage(Component.text("/disc add <id> <url> <name> <author> - Add a custom disc", NamedTextColor.YELLOW))
                 sender.sendMessage(Component.text("/disc delete <id> - Delete a custom disc", NamedTextColor.YELLOW))
                 sender.sendMessage(Component.text("/disc web - Generate Admin Login Link", NamedTextColor.RED))
             }
@@ -219,7 +219,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 return true
             }
             if (args.size < 5) {
-                sender.sendMessage(Component.text("Usage: /disc add <id> <url> <name> <author> [style]", NamedTextColor.RED))
+                sender.sendMessage(Component.text("Usage: /disc add <id> <url> <name> <author>", NamedTextColor.RED))
                 return true
             }
 
@@ -228,7 +228,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             val urlStr = args[2]
             val name = args[3].replace("_", " ")
             val author = args[4].replace("_", " ")
-            val style = if (args.size > 5) args[5].lowercase() else "cat"
+            val style = if (args.size > 5) args[5].lowercase() else "custom"
 
             // Check if disc exists
             if (plugin.discManager.getDisc(discId) != null) {
@@ -303,10 +303,14 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     // Sync back to main thread
                     plugin.server.scheduler.runTask(plugin, Runnable {
                         plugin.discManager.addDisc(disc)
-                        plugin.packGenerator.buildResourcePack(plugin.discManager.getAllDiscs())
-                        com.peyaj.jukeboxweb.pack.PackUpdater.updateAllPlayers(plugin)
-
-                        sender.sendMessage(Component.text("✔ Custom disc '$discId' added successfully! Resource pack rebuilt.", NamedTextColor.GREEN))
+                        
+                        plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+                            plugin.packGenerator.buildResourcePack(plugin.discManager.getAllDiscs())
+                            plugin.server.scheduler.runTask(plugin, Runnable {
+                                com.peyaj.jukeboxweb.pack.PackUpdater.updateAllPlayers(plugin)
+                                sender.sendMessage(Component.text("✔ Custom disc '$discId' added successfully! Resource pack rebuilt.", NamedTextColor.GREEN))
+                            })
+                        })
                     })
                 } catch (e: Exception) {
                     sender.sendMessage(Component.text("Failed to add custom disc: ${e.message}", NamedTextColor.RED))
@@ -331,9 +335,13 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
             val deleted = plugin.discManager.deleteDisc(discId)
             
             if (deleted) {
-                plugin.packGenerator.buildResourcePack(plugin.discManager.getAllDiscs())
-                com.peyaj.jukeboxweb.pack.PackUpdater.updateAllPlayers(plugin)
-                sender.sendMessage(Component.text("✔ Custom disc '$discId' deleted successfully! Resource pack rebuilt.", NamedTextColor.GREEN))
+                plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+                    plugin.packGenerator.buildResourcePack(plugin.discManager.getAllDiscs())
+                    plugin.server.scheduler.runTask(plugin, Runnable {
+                        com.peyaj.jukeboxweb.pack.PackUpdater.updateAllPlayers(plugin)
+                        sender.sendMessage(Component.text("✔ Custom disc '$discId' deleted successfully! Resource pack rebuilt.", NamedTextColor.GREEN))
+                    })
+                })
             } else {
                 sender.sendMessage(Component.text("Disc ID '$discId' not found.", NamedTextColor.RED))
             }

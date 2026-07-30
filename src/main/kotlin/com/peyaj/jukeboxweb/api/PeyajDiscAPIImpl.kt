@@ -10,9 +10,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
-/**
- * Implementation of PeyajDiscAPI.
- */
+// Implementation of PeyajDiscAPI
 class PeyajDiscAPIImpl(private val plugin: PeyajCustomDisc) : PeyajDiscAPI {
 
     override fun playDisc(player: Player, discId: String): Boolean {

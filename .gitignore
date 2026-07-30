@@ -46,3 +46,11 @@ desktop.ini
 *.tmp
 *.swp
 *~
+
+# Junk / scratch files
+*.class
+Dump.java
+Test.java
+packetevents.json
+temp_sources/
+src/main/kotlin/test/

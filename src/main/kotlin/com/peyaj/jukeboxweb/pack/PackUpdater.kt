@@ -14,19 +14,40 @@ object PackUpdater : Listener {
     // PackGenerator has getPackHash() returning Hex String, perfect.
     
     // Helper Check
-    private fun isGeyserPlayer(uuid: UUID): Boolean {
-        // Floodgate UUIDs usually start with 00000000-0000-0000-
-        // Java UUIDs are Version 4 or 3. Most significant bits 0 is a strong indicator of Floodgate.
+    private fun isBedrockPlayer(player: org.bukkit.entity.Player): Boolean {
+        val uuid = player.uniqueId
+        
+        // 1. Geyser API Check
+        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("Geyser-Spigot") || 
+            org.bukkit.Bukkit.getPluginManager().isPluginEnabled("Geyser-Paper") ||
+            org.bukkit.Bukkit.getPluginManager().isPluginEnabled("Geyser")) {
+            try {
+                val apiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
+                val api = apiClass.getMethod("api").invoke(null)
+                val isBedrock = apiClass.getMethod("isBedrockPlayer", UUID::class.java).invoke(api, uuid) as Boolean
+                if (isBedrock) return true
+            } catch (ignored: Exception) {}
+        }
+        
+        // 2. Floodgate API Check
+        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+            try {
+                val apiClass = Class.forName("org.geysermc.floodgate.api.FloodgateApi")
+                val api = apiClass.getMethod("getInstance").invoke(null)
+                val isBedrock = apiClass.getMethod("isFloodgatePlayer", UUID::class.java).invoke(api, uuid) as Boolean
+                if (isBedrock) return true
+            } catch (ignored: Exception) {}
+        }
+        
+        // 3. Fallback check: Floodgate UUIDs often have 0L mostSignificantBits
         return uuid.mostSignificantBits == 0L
     }
 
     fun updateAllPlayers(plugin: PeyajCustomDisc) {
         // 1. Geyser Update (Attempts to copy pack to Geyser folder)
-        // This is always safe to run as file IO. Reload is guarded inside.
         updateGeyserPack(plugin)
     
         // 2. Java Auto-Update
-        // Explicitly controlled by config.
         if (plugin.config.getBoolean("auto-update-pack", true)) {
             val urlBase = plugin.config.getString("public-url", "http://localhost:8080")?.trimEnd('/') ?: return
             val zipUrl = "$urlBase/download/pack"
@@ -36,45 +57,69 @@ object PackUpdater : Listener {
                 val msg = Component.text("Resource Pack Updated. Loading...", NamedTextColor.GOLD)
             
                 for (player in plugin.server.onlinePlayers) {
-                    // Skip Geyser players for Java pack updates
-                    if (isGeyserPlayer(player.uniqueId)) continue
+                    // Skip Geyser/Bedrock players for Java pack updates
+                    if (isBedrockPlayer(player)) continue
 
                     player.sendMessage(msg)
                     try {
+                        val packUuid = java.util.UUID.nameUUIDFromBytes("$zipUrl:$hash".toByteArray())
                         val packInfo = net.kyori.adventure.resource.ResourcePackInfo.resourcePackInfo()
-                            .id(java.util.UUID.nameUUIDFromBytes(zipUrl.toByteArray()))
+                            .id(packUuid)
                             .uri(java.net.URI.create(zipUrl))
                             .hash(hash)
                             .build()
                         val request = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
                             .packs(packInfo)
+                            .replace(true)
                             .build()
                         player.sendResourcePacks(request)
                     } catch (e: Exception) {
-                        player.setResourcePack(zipUrl)
+                        try {
+                            player.setResourcePack(zipUrl, hexStringToByteArray(hash))
+                        } catch (e2: Exception) {
+                            player.setResourcePack(zipUrl)
+                        }
                     }
                 }
             }
         }
     }
     
-    private fun updateGeyserPack(plugin: PeyajCustomDisc) {
-        val path = plugin.config.getString("geyser-packs-path", "plugins/Geyser-Spigot/packs") ?: return
-        if (path.isEmpty()) return
-        
-        val geyserFolder = java.io.File(path)
-        val actualFolder = if (geyserFolder.isAbsolute) geyserFolder else java.io.File(plugin.dataFolder.parentFile.parentFile, path).canonicalFile 
-        
-        if (!actualFolder.exists()) return
+    fun updateGeyserPack(plugin: PeyajCustomDisc) {
+        val configuredPath = plugin.config.getString("geyser-packs-path", "plugins/Geyser-Spigot/packs") ?: "plugins/Geyser-Spigot/packs"
+        val serverRoot = plugin.dataFolder.parentFile.parentFile
+
+        // Candidates for Geyser packs directory
+        val candidates = listOf(
+            configuredPath,
+            "plugins/Geyser-Spigot/packs",
+            "plugins/Geyser-Paper/packs",
+            "plugins/Geyser/packs",
+            "plugins/Geyser-Standalone/packs"
+        )
+
+        var targetFolder: java.io.File? = null
+        for (path in candidates) {
+            val file = if (java.io.File(path).isAbsolute) java.io.File(path) else java.io.File(serverRoot, path)
+            if (file.exists()) {
+                targetFolder = file
+                break
+            } else if (file.parentFile != null && file.parentFile.exists()) {
+                file.mkdirs()
+                targetFolder = file
+                break
+            }
+        }
+
+        val actualFolder = targetFolder ?: return
+        if (!actualFolder.exists()) actualFolder.mkdirs()
         
         val source = plugin.packGenerator.getBedrockPackFile()
         if (source.exists()) {
              try {
                  source.copyTo(java.io.File(actualFolder, "peyajCD-Bedrock.mcpack"), overwrite = true)
-                 // Quiet log, no broadcast to avoid spam if manual
-                 plugin.logger.info("Bedrock Pack updated in Geyser folder.")
+                 plugin.logger.info("Bedrock Pack updated in Geyser folder: ${actualFolder.path}")
                  
-                 // Reload is SEPARATE now.
                  if (plugin.config.getBoolean("auto-reload-geyser", false)) {
                      plugin.server.scheduler.runTask(plugin, Runnable {
                          plugin.logger.info("Reloading Geyser...")
@@ -90,7 +135,7 @@ object PackUpdater : Listener {
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val plugin = PeyajCustomDisc.instance
-        if (isGeyserPlayer(event.player.uniqueId)) return // Skip for Bedrock
+        if (isBedrockPlayer(event.player)) return // Skip Java pack prompt for Bedrock
         
         if (!plugin.config.getBoolean("auto-update-pack", true)) return
     
@@ -101,17 +146,23 @@ object PackUpdater : Listener {
         if (hash.isNotEmpty()) {
             plugin.server.scheduler.runTaskLater(plugin, Runnable {
                 try {
+                    val packUuid = java.util.UUID.nameUUIDFromBytes("$zipUrl:$hash".toByteArray())
                     val packInfo = net.kyori.adventure.resource.ResourcePackInfo.resourcePackInfo()
-                        .id(java.util.UUID.nameUUIDFromBytes(zipUrl.toByteArray()))
+                        .id(packUuid)
                         .uri(java.net.URI.create(zipUrl))
                         .hash(hash)
                         .build()
                     val request = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
                         .packs(packInfo)
+                        .replace(true)
                         .build()
                     event.player.sendResourcePacks(request)
                 } catch (e: Exception) {
-                     event.player.setResourcePack(zipUrl)
+                    try {
+                        event.player.setResourcePack(zipUrl, hexStringToByteArray(hash))
+                    } catch (e2: Exception) {
+                        event.player.setResourcePack(zipUrl)
+                    }
                 }
             }, 20L)
         }

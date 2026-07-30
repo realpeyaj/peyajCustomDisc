@@ -10,29 +10,19 @@
     <style>
         :root {
             --mc-bg: #111;
-            --mc-dirt: url('https://assets.codepen.io/13471/dirt_texture.png');
-            /* Fallback/Placeholder */
-            --mc-btn: #757575;
-            --mc-btn-hover: #8f8f8f;
-            --mc-btn-border-light: #b0b0b0;
-            --mc-btn-border-dark: #454545;
             --mc-text: #fff;
-            --mc-input-bg: #000;
-            --mc-input-border: #a0a0a0;
         }
 
-        /* Reset & Base */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'VT323', monospace;
-            -webkit-font-smoothing: none;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
             background-color: #1a1a1a;
-            /* Simple CSS dirt pattern simulation */
             background-image:
                 linear-gradient(45deg, #2b2b2b 25%, transparent 25%),
                 linear-gradient(-45deg, #2b2b2b 25%, transparent 25%),
@@ -44,7 +34,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            color: var(--mc-text);
+            color: #fff;
             padding: 20px;
         }
 
@@ -52,12 +42,11 @@
             background-color: #c6c6c6;
             padding: 4px;
             width: 100%;
-            max-width: 500px;
-            box-shadow: 10px 10px 0 #00000050;
+            max-width: 1050px;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.25);
             position: relative;
         }
 
-        /* Minecraft Window Inner */
         .window-inner {
             background-color: #c6c6c6;
             border: 4px solid #fff;
@@ -66,20 +55,68 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 10px;
+            }
+            .container {
+                max-width: 100%;
+                box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+            }
+            .window-inner {
+                padding: 12px;
+                gap: 10px;
+            }
+            h1 {
+                font-size: 2.2rem;
+            }
+            .panel-box {
+                padding: 10px;
+            }
+            .drop-zone {
+                padding: 10px;
+            }
+            .btn {
+                font-size: 1.3rem !important;
+                padding: 8px !important;
+            }
+        }
+
+        .panel-box {
+            background: #8b8b8b;
+            border: 2px solid #fff;
+            border-top-color: #373737;
+            border-left-color: #373737;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         header {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         h1 {
-            font-size: 3rem;
-            color: #404040;
-            text-shadow: 2px 2px #fff;
+            font-size: 3.2rem;
+            color: #202020;
+            text-shadow: 1px 1px 0px #ffffff;
             text-transform: uppercase;
             letter-spacing: 2px;
+            font-weight: bold;
         }
 
         .form-group {
@@ -89,35 +126,35 @@
         }
 
         label {
-            font-size: 1.5rem;
-            color: #404040;
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            font-weight: bold;
+            text-shadow: none;
         }
 
         input,
         textarea {
-            background: #000;
+            background: #000000;
             border: 2px solid #a0a0a0;
             border-top-color: #555;
             border-left-color: #555;
-            color: #fff;
+            color: #ffffff;
             padding: 10px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             outline: none;
         }
 
         input:focus,
         textarea:focus {
-            border-color: #fff;
+            border-color: #ffffff;
         }
 
-        /* Custom File Input (Minecraft Button Style) */
         .drop-zone {
-            background-color: #8b8b8b;
-            /* Darker slot background */
+            background-color: #7d7d7d;
             border: 2px solid #fff;
             border-top-color: #373737;
             border-left-color: #373737;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             transition: all 0.2s;
             cursor: pointer;
@@ -129,75 +166,81 @@
 
         .drop-zone.dragover {
             background-color: #5d9e5a;
-            /* Green highlight */
         }
 
         .drop-zone p {
-            color: #ddd;
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+            color: #ffffff;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-shadow: none;
+            margin-bottom: 5px;
         }
 
         .hint {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: #ffff55;
-            /* Minecraft Yellow */
+            text-shadow: none;
             margin-top: 5px;
+            font-weight: bold;
         }
 
-        /* Minecraft Button */
         .btn {
-            background-color: #7d7d7d;
-            border: 4px solid #fff;
-            border-bottom-color: #555;
-            border-right-color: #555;
-            color: #fff;
-            font-size: 1.5rem;
-            padding: 10px 20px;
+            background-color: #5c5c5c;
+            border: 3px solid #ffffff;
+            border-bottom-color: #2a2a2a;
+            border-right-color: #2a2a2a;
+            color: #ffffff !important;
+            font-size: 1.6rem;
+            font-weight: bold;
+            padding: 10px 16px;
             cursor: pointer;
             text-transform: uppercase;
-            text-shadow: 2px 2px #000;
+            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
+            letter-spacing: 1px;
             width: 100%;
             position: relative;
+            line-height: 1.1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn:hover {
-            background-color: #909090;
-            /* Initial hover highlight of button */
+            background-color: #787878;
             border-color: #ffffa0;
-            /* Select highlight */
-            border-bottom-color: #6e6e3f;
-            border-right-color: #6e6e3f;
+            border-bottom-color: #4a4a2a;
+            border-right-color: #4a4a2a;
+            color: #ffffa0 !important;
         }
 
         .btn:active {
-            border: 4px solid #555;
-            border-bottom-color: #fff;
-            border-right-color: #fff;
+            border: 3px solid #2a2a2a;
+            border-bottom-color: #ffffff;
+            border-right-color: #ffffff;
         }
 
         .btn:disabled {
-            background-color: #444;
-            color: #888;
-            border-color: #666;
+            background-color: #383838;
+            color: #888888 !important;
+            border-color: #555555;
             cursor: not-allowed;
+            text-shadow: none;
         }
-
 
         .dl-section {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 10px;
             border-top: 2px solid #555;
-            padding-top: 20px;
+            padding-top: 15px;
         }
 
         .btn-small {
             font-size: 1.2rem;
-            background-color: #7d7d7d;
+            padding: 6px 12px;
+            background-color: #5c5c5c;
         }
 
-        /* Toast Notification */
         .toast {
             position: fixed;
             top: 20px;
@@ -228,6 +271,12 @@
             color: #55ff55;
             margin-top: 5px;
         }
+
+        .active-tool {
+            background: #55ff55 !important;
+            color: #000000 !important;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -238,86 +287,112 @@
     <div class="container">
         <div class="window-inner">
             <header>
-                <h1>Disc Forger</h1>
+                <h1>Disc Creator</h1>
             </header>
 
             <form id="discForm" action="/api/disc" method="post" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Disc Name</label>
-                    <input type="text" name="name" placeholder="Ex: Rush E" required>
-                </div>
+                <input type="hidden" name="style" value="custom">
 
-                <div class="form-group">
-                    <label>Author</label>
-                    <input type="text" name="author" placeholder="Ex: Sheet Music Boss" required>
-                </div>
+                <div class="dashboard-grid">
+                    <!-- LEFT COLUMN: Disc Metadata & Audio -->
+                    <div class="panel-box">
+                        <div class="form-group">
+                            <label>Disc Name</label>
+                            <input type="text" name="name" placeholder="Ex: Rush E" required>
+                        </div>
 
-                <div class="form-group">
-                    <label>Lore (Tooltip)</label>
-                    <textarea name="lore" placeholder="Lines separated by enter..." rows="3"></textarea>
-                </div>
+                        <div class="form-group">
+                            <label>Author / Artist</label>
+                            <input type="text" name="author" placeholder="Ex: Sheet Music Boss" required>
+                        </div>
 
-                <div class="form-group">
-                    <label>Disc Style</label>
-                    <select name="style"
-                        style="background:#000; border:2px solid #a0a0a0; border-top-color:#555; border-left-color:#555; color:#fff; padding:10px; font-size:1.2rem; font-family:inherit;">
-                        <option value="cat">Cat (Green)</option>
-                        <option value="blocks">Blocks (Orange)</option>
-                        <option value="chirp">Chirp (Red)</option>
-                        <option value="far">Far (Green)</option>
-                        <option value="mall">Mall (Purple)</option>
-                        <option value="mellohi">Mellohi (Pink)</option>
-                        <option value="stal">Stal (Black)</option>
-                        <option value="strad">Strad (White)</option>
-                        <option value="ward">Ward (Green)</option>
-                        <option value="wait">Wait (Cyan)</option>
-                        <option value="pigstep">Pigstep (Red/Gold)</option>
-                        <option value="otherside">Otherside (Blue)</option>
-                        <option value="5">5 (Gray)</option>
-                        <option value="relic">Relic (Brown)</option>
-                        <option value="creator">Creator</option>
-                        <option value="precipice">Precipice</option>
-                        <option value="13">13 (Gold)</option>
-                        <option value="11">11 (Black/Cracked)</option>
-                    </select>
-                </div>
+                        <div class="form-group">
+                            <label>Lore (Tooltip)</label>
+                            <textarea name="lore" placeholder="Lines separated by enter..." rows="3"></textarea>
+                        </div>
 
-                <div class="form-group">
-                    <label>Audio Source</label>
-                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                        <p id="fileNameDisplay">Drag & Drop .mp3 or .ogg</p>
-                        <input type="file" id="fileInput" name="file" accept=".ogg,.mp3" required
-                            style="display: none;">
-                        <p class="hint">MP3s will be auto-converted!</p>
-                        <div id="converterStatus">Initializing Converter...</div>
+                        <div class="form-group">
+                            <label>Audio Source</label>
+                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                                <p id="fileNameDisplay">Drag & Drop .mp3 or .ogg</p>
+                                <input type="file" id="fileInput" name="file" accept=".ogg,.mp3" required style="display: none;">
+                                <p class="hint">MP3s will be auto-converted!</p>
+                                <div id="converterStatus">Initializing Converter...</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn" style="margin-top: 10px;">Forge Disc</button>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Pixel Art Studio & Inventory -->
+                    <div class="panel-box">
+                        <div class="form-group">
+                            <label style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <span>Custom Disc Designer</span>
+                                <div style="display:flex; gap:8px;">
+                                    <button type="button" id="resetBtn" class="btn btn-small" style="width:auto; padding:4px 10px; font-size:1.1rem; background:#d32f2f; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🧹 Reset</button>
+                                    <button type="button" id="randomizeBtn" class="btn btn-small" style="width:auto; padding:4px 10px; font-size:1.1rem; background:#1976d2; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🎲 Randomize</button>
+                                </div>
+                            </label>
+                            <div style="background:#262626; border:2px solid #fff; border-top-color:#373737; border-left-color:#373737; padding:14px; display:flex; flex-direction:column; gap:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; color:#fff; font-weight:bold; border-bottom:1px solid #555; padding-bottom:6px;">
+                                    <span style="text-shadow:1px 1px 0px #000;">🔍 Canvas Zoom:</span>
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        <button type="button" id="zoomOutBtn" class="btn btn-small" style="width:auto; padding:2px 10px; font-size:1.1rem; background:#424242; border:2px solid #fff; color:#fff; font-weight:bold;">-</button>
+                                        <span id="zoomLevelText" style="color:#ffff55; font-size:1.1rem; font-weight:bold; min-width:24px; text-align:center;">1x</span>
+                                        <button type="button" id="zoomInBtn" class="btn btn-small" style="width:auto; padding:2px 10px; font-size:1.1rem; background:#424242; border:2px solid #fff; color:#fff; font-weight:bold;">+</button>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap;">
+                                    <div style="overflow:auto; max-width:100%; max-height:260px; padding:6px; background:#000; border:2px solid #fff;">
+                                        <canvas id="discCanvas" width="16" height="16" style="width:140px; height:140px; image-rendering:pixelated; background:transparent; cursor:crosshair; display:block;"></canvas>
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; gap:10px;">
+                                        <div style="display:flex; gap:6px;">
+                                            <button type="button" id="toolPencil" class="btn btn-small tool-btn active-tool" style="padding:6px 12px; font-size:1.1rem; background:#388e3c; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">✏️ Paint</button>
+                                            <button type="button" id="toolFill" class="btn btn-small tool-btn" style="padding:6px 12px; font-size:1.1rem; background:#f57c00; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🪣 Fill</button>
+                                            <button type="button" id="toolEraser" class="btn btn-small tool-btn" style="padding:6px 12px; font-size:1.1rem; background:#7b1fa2; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🧼 Erase</button>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+                                            <span style="font-size:0.85rem; color:#fff; font-weight:bold;">🎨 Color Wheel:</span>
+                                            <input type="color" id="drawColor" value="#f0c83c" style="border:1px solid #aaa; background:none; width:36px; height:30px; cursor:pointer;" title="Click to pick custom color wheel">
+                                        </div>
+                                        <div style="font-size:0.75rem; color:#aaa; margin-top:2px;">Quick Palette Swatches:</div>
+                                        <div style="display:grid; grid-template-columns: repeat(6, 20px); gap:4px;" id="palette">
+                                            <div class="swatch" data-color="#282828" style="background:#282828; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#282828 Vinyl"></div>
+                                            <div class="swatch" data-color="#f0c83c" style="background:#f0c83c; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#f0c83c Gold"></div>
+                                            <div class="swatch" data-color="#cc3333" style="background:#cc3333; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#cc3333 Red"></div>
+                                            <div class="swatch" data-color="#33cc66" style="background:#33cc66; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#33cc66 Green"></div>
+                                            <div class="swatch" data-color="#3366cc" style="background:#3366cc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#3366cc Blue"></div>
+                                            <div class="swatch" data-color="#9933cc" style="background:#9933cc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#9933cc Purple"></div>
+                                            <div class="swatch" data-color="#ffffff" style="background:#ffffff; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#ffffff White"></div>
+                                            <div class="swatch" data-color="#ff9900" style="background:#ff9900; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#ff9900 Orange"></div>
+                                            <div class="swatch" data-color="#00cccc" style="background:#00cccc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#00cccc Cyan"></div>
+                                            <div class="swatch" data-color="#ff66cc" style="background:#ff66cc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#ff66cc Pink"></div>
+                                            <div class="swatch" data-color="#999999" style="background:#999999; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#999999 Gray"></div>
+                                            <div class="swatch" data-color="#55ff55" style="background:#55ff55; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#55ff55 Lime"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dl-section">
+                            <a href="/download/pack" style="width: 50%; text-decoration: none;">
+                                <button type="button" class="btn btn-small">Java Pack</button>
+                            </a>
+                            <a href="/download/geyser" style="width: 50%; text-decoration: none;">
+                                <button type="button" class="btn btn-small">Geyser Pack</button>
+                            </a>
+                        </div>
+
+                        <div id="library" style="margin-top:10px;">
+                            <h3 style="font-size:1.5rem; color:#38bdf8; font-weight:bold; margin-bottom:8px; text-shadow:1px 1px 0px #000;">Disc Inventory</h3>
+                            <div id="discList">Loading...</div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Cover Art (Optional)</label>
-                    <div class="drop-zone" id="dropZoneCover" onclick="document.getElementById('coverInput').click()"
-                        style="padding: 10px; border-color: #aaa;">
-                        <p id="coverNameDisplay" style="font-size: 1rem; margin:0;">Click to set Cover (PNG)</p>
-                        <input type="file" id="coverInput" name="cover" accept=".png" style="display: none;">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn">Forge Disc</button>
             </form>
-
-            <div class="dl-section">
-                <a href="/download/pack" style="width: 50%; text-decoration: none;">
-                    <button class="btn btn-small">Java Pack</button>
-                </a>
-                <a href="/download/geyser" style="width: 50%; text-decoration: none;">
-                    <button class="btn btn-small">Geyser Pack</button>
-                </a>
-            </div>
-
-            <div id="library">
-                <h3>Disc Inventory</h3>
-                <div id="discList">Loading...</div>
-            </div>
         </div>
     </div>
 
@@ -351,18 +426,18 @@
 
         function renderDiscs(discs) {
             if (discs.length === 0) {
-                discList.innerHTML = "<p style='color:#777;'>No discs forged yet.</p>";
+                discList.innerHTML = "<p style='color:#94a3b8; font-size:1.2rem;'>No discs forged yet.</p>";
                 return;
             }
             let html = "<ul style='list-style:none; padding:0;'>";
             discs.forEach(d => {
                 html += `
-                <li style="background:#a0a0a0; border:2px solid #555; padding:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="/api/disc/${d.id}/cover" style="width:32px; height:32px; image-rendering:pixelated; border:2px solid #555; background:#111;" onerror="this.style.display='none'">
-                        <span><span style="color:#000;">${d.name}</span> <span style="color:#555; font-size:0.8em;">by ${d.author}</span></span>
+                <li style="background:#0f172a; border:2px solid #334155; border-radius:6px; padding:8px 12px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <img src="/api/disc/${d.id}/cover" style="width:36px; height:36px; image-rendering:pixelated; border:2px solid #38bdf8; border-radius:4px; background:#111;" onerror="this.style.display='none'">
+                        <span><span style="color:#38bdf8; font-size:1.3rem; font-weight:bold;">${d.name}</span> <span style="color:#facc15; font-size:1.1rem;">by ${d.author}</span></span>
                     </div>
-                    <button class="btn btn-small" style="width:auto; padding:2px 5px; font-size:1rem; background:#cc4444;" onclick="deleteDisc('${d.id}')">X</button>
+                    <button class="btn btn-small" style="width:auto; padding:4px 10px; font-size:1.1rem; background:linear-gradient(180deg, #dc2626 0%, #991b1b 100%); border-color:#f87171;" onclick="deleteDisc('${d.id}')">🗑️ Destroy</button>
                 </li>`;
             });
             html += "</ul>";
@@ -425,13 +500,209 @@
             }
         }
 
-        // --- Cover Art Handling ---
-        coverInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                finalCover = e.target.files[0];
-                coverNameDisplay.innerText = "Selected: " + finalCover.name;
-            }
+        // --- Pixel Art Studio Studio Engine ---
+        const discCanvas = document.getElementById('discCanvas');
+        const ctx = discCanvas ? discCanvas.getContext('2d') : null;
+        const drawColorInput = document.getElementById('drawColor');
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        const toolPencil = document.getElementById('toolPencil');
+        const toolFill = document.getElementById('toolFill');
+        const toolEraser = document.getElementById('toolEraser');
+
+        let currentTool = 'pencil'; // 'pencil', 'fill', 'erase'
+        let isDrawing = false;
+        let pixelGrid = Array(16).fill(null).map(() => Array(16).fill('transparent'));
+
+        function setTool(tool) {
+            currentTool = tool;
+            [toolPencil, toolFill, toolEraser].forEach(b => b.classList.remove('active-tool'));
+            if (tool === 'pencil') toolPencil.classList.add('active-tool');
+            if (tool === 'fill') toolFill.classList.add('active-tool');
+            if (tool === 'erase') toolEraser.classList.add('active-tool');
+        }
+
+        if (toolPencil) toolPencil.addEventListener('click', () => setTool('pencil'));
+        if (toolFill) toolFill.addEventListener('click', () => setTool('fill'));
+        if (toolEraser) toolEraser.addEventListener('click', () => setTool('erase'));
+
+        // Swatches
+        document.querySelectorAll('.swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                const color = swatch.getAttribute('data-color');
+                if (drawColorInput) drawColorInput.value = color;
+                if (currentTool === 'erase') setTool('pencil');
+            });
         });
+
+        // Initialize with default random disc pattern
+        randomizeDiscPattern();
+
+        function randomizeDiscPattern() {
+            pixelGrid = Array(16).fill(null).map(() => Array(16).fill('transparent'));
+            
+            const vinylColors = ['#282828', '#b42828', '#288c3c', '#2850b4', '#8c28a0', '#c88c28'];
+            const labelColors = ['#f0c83c', '#e6e6e6', '#f06428', '#3cdddd', '#a0e650', '#ff66cc'];
+
+            const vinyl = vinylColors[Math.floor(Math.random() * vinylColors.length)];
+            const label = labelColors[Math.floor(Math.random() * labelColors.length)];
+            const darkVinyl = adjustColorBrightness(vinyl, -30);
+
+            for (let y = 0; y < 16; y++) {
+                for (let x = 0; x < 16; x++) {
+                    const dx = x - 7.5;
+                    const dy = y - 7.5;
+                    const distSq = dx * dx + dy * dy;
+
+                    if (distSq <= 1.0) {
+                        pixelGrid[y][x] = '#000000'; // Spindle Hole
+                    } else if (distSq <= 10.0) {
+                        pixelGrid[y][x] = label; // Center Label
+                    } else if (distSq <= 48.0) {
+                        pixelGrid[y][x] = (x + y) % 3 === 0 ? darkVinyl : vinyl; // Vinyl Groves
+                    } else if (distSq <= 56.0) {
+                        pixelGrid[y][x] = '#111111'; // Outer Rim
+                    }
+                }
+            }
+            redrawGridCanvas();
+        }
+
+        function adjustColorBrightness(hex, percent) {
+            let num = parseInt(hex.replace("#",""), 16),
+                amt = Math.round(2.55 * percent),
+                R = (num >> 16) + amt,
+                G = (num >> 8 & 0x00FF) + amt,
+                B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+        }
+
+        function redrawGridCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, 16, 16);
+            for (let y = 0; y < 16; y++) {
+                for (let x = 0; x < 16; x++) {
+                    if (pixelGrid[y][x] !== 'transparent') {
+                        ctx.fillStyle = pixelGrid[y][x];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+        }
+
+        // --- Zoom Controls ---
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomLevelText = document.getElementById('zoomLevelText');
+
+        let currentZoomIndex = 0; // 0 = 1x (140px), 1 = 1.5x (200px), 2 = 2x (260px)
+        const zoomSizes = [140, 200, 260];
+        const zoomLabels = ['1x', '1.5x', '2x'];
+
+        function updateCanvasZoom() {
+            if (!discCanvas) return;
+            const pxSize = zoomSizes[currentZoomIndex];
+            discCanvas.style.width = pxSize + 'px';
+            discCanvas.style.height = pxSize + 'px';
+            if (zoomLevelText) zoomLevelText.innerText = zoomLabels[currentZoomIndex];
+        }
+
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', () => {
+                if (currentZoomIndex < zoomSizes.length - 1) {
+                    currentZoomIndex++;
+                    updateCanvasZoom();
+                }
+            });
+        }
+
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', () => {
+                if (currentZoomIndex > 0) {
+                    currentZoomIndex--;
+                    updateCanvasZoom();
+                }
+            });
+        }
+
+        function getPixelCoords(e) {
+            const rect = discCanvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / (rect.width / 16));
+            const y = Math.floor((e.clientY - rect.top) / (rect.height / 16));
+            return { x: Math.max(0, Math.min(15, x)), y: Math.max(0, Math.min(15, y)) };
+        }
+
+        const resetBtn = document.getElementById('resetBtn');
+
+        function isInsideDisc(x, y) {
+            const dx = x - 7.5;
+            const dy = y - 7.5;
+            return (dx * dx + dy * dy) <= 56.25; // Circle radius 7.5 pixels
+        }
+
+        function resetDiscPattern() {
+            pixelGrid = Array(16).fill(null).map(() => Array(16).fill('transparent'));
+            for (let y = 0; y < 16; y++) {
+                for (let x = 0; x < 16; x++) {
+                    const dx = x - 7.5;
+                    const dy = y - 7.5;
+                    const distSq = dx * dx + dy * dy;
+
+                    if (distSq <= 1.0) {
+                        pixelGrid[y][x] = '#000000'; // Spindle Hole
+                    } else if (distSq <= 10.0) {
+                        pixelGrid[y][x] = '#f0c83c'; // Center Label
+                    } else if (distSq <= 48.0) {
+                        pixelGrid[y][x] = '#282828'; // Classic Black Vinyl Body
+                    } else if (distSq <= 56.0) {
+                        pixelGrid[y][x] = '#111111'; // Outer Rim
+                    }
+                }
+            }
+            redrawGridCanvas();
+        }
+
+        function applyPaint(x, y) {
+            if (!isInsideDisc(x, y)) return; // Prevent painting outside circular disc boundary!
+            const color = currentTool === 'erase' ? 'transparent' : drawColorInput.value;
+            if (currentTool === 'fill') {
+                floodFill(x, y, pixelGrid[y][x], color);
+            } else {
+                pixelGrid[y][x] = color;
+            }
+            redrawGridCanvas();
+        }
+
+        function floodFill(startX, startY, targetColor, fillColor) {
+            if (targetColor === fillColor) return;
+            const queue = [{ x: startX, y: startY }];
+            while (queue.length > 0) {
+                const { x, y } = queue.pop();
+                if (x < 0 || x >= 16 || y < 0 || y >= 16) continue;
+                if (!isInsideDisc(x, y)) continue; // Keep flood fill strictly within disc circle
+                if (pixelGrid[y][x] === targetColor) {
+                    pixelGrid[y][x] = fillColor;
+                    queue.push({ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 });
+                }
+            }
+        }
+
+        if (discCanvas) {
+            discCanvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const { x, y } = getPixelCoords(e);
+                applyPaint(x, y);
+            });
+            discCanvas.addEventListener('mousemove', (e) => {
+                if (isDrawing && currentTool !== 'fill') {
+                    const { x, y } = getPixelCoords(e);
+                    applyPaint(x, y);
+                }
+            });
+            window.addEventListener('mouseup', () => { isDrawing = false; });
+        }
+
+        if (randomizeBtn) randomizeBtn.addEventListener('click', randomizeDiscPattern);
+        if (resetBtn) resetBtn.addEventListener('click', resetDiscPattern);
 
         // --- Form Submit ---
         form.addEventListener('submit', async (e) => {
@@ -452,10 +723,13 @@
                 formData.append('name', form.elements.name.value);
                 formData.append('author', form.elements.author.value);
                 formData.append('lore', form.elements.lore.value);
-                formData.append('style', form.elements.style.value); // NEW: Disc style
+                formData.append('style', form.elements.style.value);
                 formData.append('file', finalFile);
-                if (finalCover) {
-                    formData.append('cover', finalCover);
+
+                // Auto export canvas design as cover image blob
+                const coverBlob = await new Promise(resolve => discCanvas.toBlob(resolve, 'image/png'));
+                if (coverBlob) {
+                    formData.append('cover', coverBlob, 'disc.png');
                 }
 
                 const res = await fetch('/api/disc', {
@@ -466,10 +740,9 @@
                 if (res.ok) {
                     showToast("Success! Disc Forged.");
                     form.reset();
+                    renderCanvasDisc();
                     fileNameDisplay.innerText = "Drag & Drop .mp3 or .ogg";
-                    coverNameDisplay.innerText = "Click to set Cover (PNG)";
                     finalFile = null;
-                    finalCover = null;
                     converterStatus.style.display = 'none';
                     fetchDiscs();
                 } else {

@@ -16,7 +16,7 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
 
     private val discsFile = File(plugin.dataFolder, "discs.json")
     private val mapper = jacksonObjectMapper()
-    private val discs = mutableMapOf<String, CustomDisc>()
+    private val discs = java.util.concurrent.ConcurrentHashMap<String, CustomDisc>()
     
     val namespaceKey = NamespacedKey(plugin, "custom_disc_id")
 
@@ -82,11 +82,10 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
         discs.remove(id)
         saveDiscs()
         
-        // Also delete audio files
         val mp3 = File(plugin.dataFolder, "discs/$id.mp3")
-        if(mp3.exists()) mp3.delete()
+        if (mp3.exists()) mp3.delete()
         val ogg = File(plugin.dataFolder, "discs/$id.ogg")
-        if(ogg.exists()) ogg.delete()
+        if (ogg.exists()) ogg.delete()
         
         return true
     }
@@ -98,12 +97,10 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
     fun createDiscItem(discId: String): ItemStack? {
         val disc = discs[discId] ?: return null
         
-        // Select material based on disc style
-        val material = getDiscMaterial(disc.style)
-        val item = ItemStack(material)
+        val item = ItemStack(Material.PAPER)
         val meta = item.itemMeta
         
-        meta.displayName(Component.text(disc.name).color(NamedTextColor.AQUA))
+        meta.displayName(Component.text("♫ ${disc.name} ♫").color(NamedTextColor.AQUA))
         
         val loreLines = mutableListOf<Component>()
         loreLines.add(Component.text("Artist: ${disc.author}", NamedTextColor.YELLOW))
@@ -115,8 +112,6 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
             loreLines.add(Component.text("Duration: $durStr", NamedTextColor.GRAY))
         }
         
-        loreLines.add(Component.text("Style: ${disc.style.uppercase().replace("_", " ")}", NamedTextColor.DARK_GRAY))
-        
         if (disc.lore.isNotEmpty()) {
             loreLines.add(Component.empty())
             disc.lore.forEach { line ->
@@ -125,44 +120,14 @@ class DiscManager(private val plugin: PeyajCustomDisc) {
         }
         meta.lore(loreLines)
         
-        // Custom Model Data for resource pack textures
-        if (disc.customModelData != 0) {
-            meta.setCustomModelData(disc.customModelData)
-        }
+        val modelData = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(disc.id.hashCode()) % 50000)
+        meta.setCustomModelData(modelData)
         
-        // Persistent Data Container to identify it as OUR disc
         meta.persistentDataContainer.set(namespaceKey, PersistentDataType.STRING, disc.id)
-        
-        // Hide attributes to make it look clean
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
         
         item.itemMeta = meta
         return item
-    }
-    
-    private fun getDiscMaterial(style: String): Material {
-        return when(style.lowercase()) {
-            "13" -> Material.MUSIC_DISC_13
-            "cat" -> Material.MUSIC_DISC_CAT
-            "blocks" -> Material.MUSIC_DISC_BLOCKS
-            "chirp" -> Material.MUSIC_DISC_CHIRP
-            "far" -> Material.MUSIC_DISC_FAR
-            "mall" -> Material.MUSIC_DISC_MALL
-            "mellohi" -> Material.MUSIC_DISC_MELLOHI
-            "stal" -> Material.MUSIC_DISC_STAL
-            "strad" -> Material.MUSIC_DISC_STRAD
-            "ward" -> Material.MUSIC_DISC_WARD
-            "11" -> Material.MUSIC_DISC_11
-            "wait" -> Material.MUSIC_DISC_WAIT
-            "otherside" -> Material.MUSIC_DISC_OTHERSIDE
-            "5" -> Material.MUSIC_DISC_5
-            "pigstep" -> Material.MUSIC_DISC_PIGSTEP
-            "relic" -> Material.MUSIC_DISC_RELIC
-            "creator" -> Material.MUSIC_DISC_CREATOR
-            "precipice" -> Material.MUSIC_DISC_PRECIPICE
-            "creator_music_box" -> Material.MUSIC_DISC_CREATOR_MUSIC_BOX
-            else -> Material.MUSIC_DISC_CAT // Default fallback
-        }
     }
 
     fun isCustomDisc(item: ItemStack?): Boolean {

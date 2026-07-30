@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.peyaj"
-version = "2.1"
+version = "2.2"
 
 repositories {
     mavenCentral()
@@ -18,15 +18,17 @@ repositories {
     maven("https://maven.lavalink.dev/snapshots")
     maven("https://maven.enginehub.org/repo/") // WorldGuard/WorldEdit
     maven("https://repo.codemc.org/repository/maven-public/")
+    maven("https://repo.opencollab.dev/main/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.47-alpha")
     
-    // WorldGuard (Optional)
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9")
+    compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0")
     
+    implementation("com.github.retrooper:packetevents-spigot:2.12.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.javalin:javalin:6.1.3")
     implementation("org.slf4j:slf4j-simple:2.0.7")
@@ -49,6 +51,8 @@ tasks.shadowJar {
     exclude("natives/darwin*/**")
     exclude("natives/mac*/**")
     relocate("org.bstats", "com.peyaj.jukeboxweb.bstats")
+    relocate("com.github.retrooper.packetevents", "com.peyaj.jukeboxweb.packetevents")
+    relocate("io.github.retrooper.packetevents", "com.peyaj.jukeboxweb.packetevents")
 }
 
 tasks.processResources {

@@ -27,6 +27,29 @@ class PeyajCustomDisc : JavaPlugin() {
     lateinit var discGUI: com.peyaj.jukeboxweb.gui.DiscGUI
     var regionMusicManager: com.peyaj.jukeboxweb.region.RegionMusicManager? = null
 
+    override fun onLoad() {
+        try {
+            // Initialize bundled PacketEvents API safely before server startup
+            var pe: com.github.retrooper.packetevents.PacketEventsAPI<*>? = null
+            try {
+                pe = com.github.retrooper.packetevents.PacketEvents.getAPI()
+            } catch (e: Throwable) {}
+
+            if (pe == null) {
+                val peBuilder = io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder.build(this)
+                com.github.retrooper.packetevents.PacketEvents.setAPI(peBuilder)
+                pe = com.github.retrooper.packetevents.PacketEvents.getAPI()
+            }
+            
+            if (!pe.isLoaded) {
+                pe.settings.checkForUpdates(false)
+                pe.load()
+            }
+        } catch (e: Throwable) {
+            logger.warning("Failed to initialize PacketEvents in onLoad: ${e.message}")
+        }
+    }
+
     override fun onEnable() {
         instance = this
         printStartupLogo()
@@ -42,6 +65,13 @@ class PeyajCustomDisc : JavaPlugin() {
         
         // Ensure FFmpeg (Auto Download if needed)
         com.peyaj.jukeboxweb.util.FFmpegManager.ensureFFmpeg(this)
+
+        try {
+            packGenerator.buildResourcePack(discManager.getAllDiscs())
+            com.peyaj.jukeboxweb.pack.PackUpdater.updateGeyserPack(this)
+        } catch (e: Exception) {
+            logger.warning("Failed to build/deploy initial resource pack: ${e.message}")
+        }
 
         // Register Commands
         getCommand("disc")?.setExecutor(JukeboxCommand(this))
@@ -78,6 +108,21 @@ class PeyajCustomDisc : JavaPlugin() {
             logger.info("bStats metrics enabled.")
         } catch (e: Exception) {
             logger.warning("Failed to initialize bStats: ${e.message}")
+        }
+
+        try {
+            val pe = com.github.retrooper.packetevents.PacketEvents.getAPI()
+            if (pe != null) {
+                if (!pe.isInitialized) {
+                    pe.init()
+                }
+                pe.eventManager.registerListener(
+                    com.peyaj.jukeboxweb.packet.PacketEventsHandler(this)
+                )
+                logger.info("✔ PacketEvents network listener initialized.")
+            }
+        } catch (e: Throwable) {
+            logger.warning("PacketEvents initialization failed in onEnable: ${e.message}. Running in standard Paper sound mode.")
         }
         
         // Initialize WebServer
@@ -128,14 +173,14 @@ class PeyajCustomDisc : JavaPlugin() {
 
     private fun printStartupLogo() {
         val logo = """
-§b                      _      §3  ____  ____  
+§b                            _   §3 ____  ____  
 §b  _ __   ___  _   _  __ _  (_) §3 / ___||  _ \ 
 §b | '_ \ / _ \| | | |/ _` | | |§3 | |    | | | |
 §b | |_) |  __/| |_| | (_| | | |§3 | |___ | |_| |
 §b | .__/ \___| \__, |\__,_| | |§3  \____||____/ 
 §b |_|          |___/       _/ |              
 §b                         |__/               
-      §fpeyajCustomDisc §7v1.5 §8| §fMade by §bpeyaj
+      §fpeyajCustomDisc §7v2.2 §8| §fMade by §bpeyaj
         """.trimIndent()
         
         logo.lines().forEach { server.consoleSender.sendMessage(it) }

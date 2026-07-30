@@ -5,6 +5,11 @@
 # ensure this port is open/allocated on your hosting panel.
 web-port: 8080
 
+# Security Admin Password for direct browser login to Disc Creator.
+# Set to a strong password to prevent unauthorized web access.
+# when someones tried to access the ip without using /disc web, they will be asked to enter this password
+admin-password: "changeme"
+
 # The Public URL of this plugin's web server.
 # Used to send the resource pack to players.
 # Example: "http://143.2.1.5:8080" or "https://discs.myserver.com"
@@ -13,17 +18,10 @@ public-url: "http://localhost:8080"
 # Should the plugin automatically send the resource pack to players?
 auto-update-pack: true
 
-# Geyser Integration
-# Path to Geyser's 'packs' folder (relative to server root).
-# If set, the Bedrock pack will be automatically copied here.
-# Default: "plugins/Geyser-Spigot/packs"
-geyser-packs-path: "plugins/Geyser-Spigot/packs"
-
 # Should we automatically run "geyser reload" after updating the Bedrock pack?
-# WARNING: This will KICK all Bedrock players.
-# Set to 'true' if you want immediate updates and don't mind the kick.
-# Set to 'false' (Recommended) to update the file silently; players will see it on next rejoin/restart.
-auto-reload-geyser: false
+# WARNING: This may cause temporary lag or disconnect some Bedrock players.
+# Set to 'true' if you want immediate updates, or 'false' to require manual restarts/reloads.
+auto-reload-geyser: true
 
 # Proxy / HAProxy Support
 # Set to 'true' if you are running this plugin behind a proxy (like HAProxy) that sends the PROXY protocol.

@@ -6,6 +6,7 @@ prefix: peyajCustomDisc
 authors: [peyaj]
 description: Custom disc creator and manager with Web GUI, WorldGuard integration, and Developer API
 softdepend: [WorldGuard]
+loadbefore: [Geyser-Spigot, Geyser-Paper, Geyser]
 permissions:
   pjcustomdisc.admin:
     description: Allows full access to peyajCustomDisc commands
