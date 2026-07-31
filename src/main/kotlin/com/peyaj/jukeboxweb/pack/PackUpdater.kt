@@ -44,8 +44,8 @@ object PackUpdater : Listener {
     }
 
     fun updateAllPlayers(plugin: PeyajCustomDisc) {
-        // 1. Geyser Update (Attempts to copy pack to Geyser folder)
-        updateGeyserPack(plugin)
+        // 1. Geyser Update (Attempts to copy pack to Geyser folder & reload Geyser if enabled)
+        updateGeyserPack(plugin, forceReload = true)
     
         // 2. Java Auto-Update
         if (plugin.config.getBoolean("auto-update-pack", true)) {
@@ -70,8 +70,6 @@ object PackUpdater : Listener {
                             .build()
                         val request = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
                             .packs(packInfo)
-                            .replace(true)
-                            .build()
                         player.sendResourcePacks(request)
                     } catch (e: Exception) {
                         try {
@@ -84,8 +82,8 @@ object PackUpdater : Listener {
             }
         }
     }
-    
-    fun updateGeyserPack(plugin: PeyajCustomDisc) {
+
+    fun updateGeyserPack(plugin: PeyajCustomDisc, forceReload: Boolean = false) {
         val configuredPath = plugin.config.getString("geyser-packs-path", "plugins/Geyser-Spigot/packs") ?: "plugins/Geyser-Spigot/packs"
         val serverRoot = plugin.dataFolder.parentFile.parentFile
 
@@ -120,7 +118,7 @@ object PackUpdater : Listener {
                  source.copyTo(java.io.File(actualFolder, "peyajCD-Bedrock.mcpack"), overwrite = true)
                  plugin.logger.info("Bedrock Pack updated in Geyser folder: ${actualFolder.path}")
                  
-                 if (plugin.config.getBoolean("auto-reload-geyser", false)) {
+                 if (forceReload && plugin.config.getBoolean("auto-reload-geyser", false)) {
                      plugin.server.scheduler.runTask(plugin, Runnable {
                          plugin.logger.info("Reloading Geyser...")
                          plugin.server.dispatchCommand(plugin.server.consoleSender, "geyser reload")
