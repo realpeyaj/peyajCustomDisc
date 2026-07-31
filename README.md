@@ -42,13 +42,15 @@ Custom music disc plugin for Paper servers. Upload any audio file, get a playabl
 | `/disc region list` | List region mappings |
 | `/disc web` | Generate a one-time admin login link |
 
-### In-Game Disc Addition Example
+### Adding Discs
 
-You can add custom music discs directly in-game. To represent spaces in the track name and author, use underscores (`_`):
+The recommended way to add discs is through the **Web Dashboard** (`/disc web`). It lets you upload audio files, design a custom disc texture, and preview everything before saving. Supported upload formats: MP3, WAV, FLAC, M4A, MP4, WMA, AAC, WebM. The plugin converts them to OGG automatically.
+
+You can also add discs directly in-game if you have a direct download link to the audio file:
 ```text
 /disc add rushe https://mywebsite.com/audio/rushe.mp3 Rush_E Sheet_Music_Boss relic
 ```
-This downloads `rushe.mp3` in the background, converts it to OGG using FFmpeg, registers the disc under the name **"Rush E"** by **"Sheet Music Boss"**, uses the **"relic"** style texture, and regenerates the resource pack automatically.
+Use underscores (`_`) for spaces in the track name and author. The last argument is the disc style texture (optional).
 
 ## Permissions
 
