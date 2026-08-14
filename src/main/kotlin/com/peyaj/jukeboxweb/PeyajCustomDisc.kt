@@ -27,81 +27,20 @@ class PeyajCustomDisc : JavaPlugin() {
     lateinit var discGUI: com.peyaj.jukeboxweb.gui.DiscGUI
     var regionMusicManager: com.peyaj.jukeboxweb.region.RegionMusicManager? = null
 
-    override fun onLoad() {
-        try {
-            var pe: com.github.retrooper.packetevents.PacketEventsAPI<*>? = null
-            try {
-                pe = com.github.retrooper.packetevents.PacketEvents.getAPI()
-            } catch (e: Throwable) {}
-
-            val detectedVersion = detectServerVersion()
-
-            if (pe == null) {
-                val peBuilder = io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder.build(this)
-                try {
-                    peBuilder.settings
-                        .checkForUpdates(false)
-                        .bStats(false)
-                    val m = peBuilder.settings.javaClass.getMethod("serverVersion", com.github.retrooper.packetevents.manager.server.ServerVersion::class.java)
-                    m.invoke(peBuilder.settings, detectedVersion)
-                } catch (e: Throwable) {
-                    try {
-                        val m = peBuilder.settings.javaClass.getMethod("setServerVersion", com.github.retrooper.packetevents.manager.server.ServerVersion::class.java)
-                        m.invoke(peBuilder.settings, detectedVersion)
-                    } catch (e2: Throwable) {}
-                }
-                com.github.retrooper.packetevents.PacketEvents.setAPI(peBuilder)
-                pe = com.github.retrooper.packetevents.PacketEvents.getAPI()
-            }
-            
-            if (!pe.isLoaded) {
-                try {
-                    pe.settings
-                        .checkForUpdates(false)
-                        .bStats(false)
-                    val m = pe.settings.javaClass.getMethod("serverVersion", com.github.retrooper.packetevents.manager.server.ServerVersion::class.java)
-                    m.invoke(pe.settings, detectedVersion)
-                } catch (e: Throwable) {
-                    try {
-                        val m = pe.settings.javaClass.getMethod("setServerVersion", com.github.retrooper.packetevents.manager.server.ServerVersion::class.java)
-                        m.invoke(pe.settings, detectedVersion)
-                    } catch (e2: Throwable) {}
-                }
-                pe.load()
-            }
-        } catch (e: Throwable) {
-            logger.warning("Failed to initialize PacketEvents in onLoad: ${e.message}")
-        }
-    }
-
-    private fun detectServerVersion(): com.github.retrooper.packetevents.manager.server.ServerVersion {
-        val versionString = try {
-            org.bukkit.Bukkit.getBukkitVersion() + " " + org.bukkit.Bukkit.getVersion()
-        } catch (e: Throwable) {
-            "1.21.1"
-        }
-        
-        val mcVersion = Regex("""1\.\d+(\.\d+)?""").find(versionString)?.value ?: "1.21.1"
-        val enumName = "V_" + mcVersion.replace(".", "_")
-        
-        return try {
-            com.github.retrooper.packetevents.manager.server.ServerVersion.valueOf(enumName)
-        } catch (e: Throwable) {
-            try {
-                com.github.retrooper.packetevents.manager.server.ServerVersion.getLatest()
-            } catch (e2: Throwable) {
-                com.github.retrooper.packetevents.manager.server.ServerVersion.V_1_20_4
-            }
-        }
-    }
-
     override fun onEnable() {
         instance = this
         printStartupLogo()
         
-        // Save default config
+        // Save default config & auto-migrate new keys from newer plugin versions
         saveDefaultConfig()
+        updateConfig()
         
+        // Check public-url warning
+        val publicUrl = config.getString("public-url", "http://localhost:8080") ?: "http://localhost:8080"
+        if (publicUrl.contains("localhost") || publicUrl.contains("127.0.0.1")) {
+            logger.warning("[!] 'public-url' in config.yml is set to '$publicUrl'. Players connecting over the internet won't be able to download the resource pack unless this is changed to your server's public IP or domain!")
+        }
+
         // Initialize Managers
         discManager = DiscManager(this)
         discManager.loadDiscs()
@@ -154,21 +93,6 @@ class PeyajCustomDisc : JavaPlugin() {
         } catch (e: Exception) {
             logger.warning("Failed to initialize bStats: ${e.message}")
         }
-
-        try {
-            val pe = com.github.retrooper.packetevents.PacketEvents.getAPI()
-            if (pe != null) {
-                if (!pe.isInitialized) {
-                    pe.init()
-                }
-                pe.eventManager.registerListener(
-                    com.peyaj.jukeboxweb.packet.PacketEventsHandler(this)
-                )
-                logger.info("✔ PacketEvents network listener initialized.")
-            }
-        } catch (e: Throwable) {
-            logger.warning("PacketEvents initialization failed in onEnable: ${e.message}. Running in standard Paper sound mode.")
-        }
         
         // Initialize WebServer
         webServer = WebServer(this)
@@ -184,6 +108,29 @@ class PeyajCustomDisc : JavaPlugin() {
         }.start()
 
         logger.info("peyajCustomDisc enabled!")
+    }
+
+    private fun updateConfig() {
+        try {
+            val configStream = getResource("config.yml") ?: return
+            val defaultConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
+                java.io.InputStreamReader(configStream, java.nio.charset.StandardCharsets.UTF_8)
+            )
+            
+            var modified = false
+            for (key in defaultConfig.getKeys(true)) {
+                if (!config.contains(key)) {
+                    config.set(key, defaultConfig.get(key))
+                    modified = true
+                }
+            }
+            if (modified) {
+                saveConfig()
+                logger.info("✔ Automatically updated config.yml with new settings from this version.")
+            }
+        } catch (e: Exception) {
+            logger.warning("Could not auto-migrate config.yml: ${e.message}")
+        }
     }
 
     override fun onDisable() {

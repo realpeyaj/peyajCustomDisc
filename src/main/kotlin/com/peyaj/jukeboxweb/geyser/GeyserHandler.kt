@@ -70,16 +70,16 @@ object GeyserHandler {
                 dataBuilder.javaClass.getMethod("customItemOptions", optionsClass).invoke(dataBuilder, options)
                 val itemData = dataBuilder.javaClass.getMethod("build").invoke(dataBuilder)
 
-                // Register against minecraft:music_disc_11
+                // Register against minecraft:paper since the Java item is Material.PAPER
                 val registerMethod = event.javaClass.methods.find { m ->
                     m.name == "register" &&
                     m.parameterCount == 2 &&
                     m.parameterTypes[0] == String::class.java
                 } ?: throw NoSuchMethodException("register(String, CustomItemData)")
 
-                registerMethod.invoke(event, "minecraft:music_disc_11", itemData)
+                registerMethod.invoke(event, "minecraft:paper", itemData)
 
-                plugin.logger.info("✔ Geyser: Registered custom item music_disc_$discCleanId (CMD=$cmd)")
+                plugin.logger.info("✔ Geyser: Registered custom item music_disc_$discCleanId (CMD=$cmd) to minecraft:paper")
             }
         } catch (e: Exception) {
             plugin.logger.warning("Geyser custom item registration failed: ${e.message}")

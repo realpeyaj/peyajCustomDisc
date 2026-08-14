@@ -15,8 +15,24 @@ admin-password: "changeme"
 # Example: "http://143.2.1.5:8080" or "https://discs.myserver.com"
 public-url: "http://localhost:8080"
 
-# Should the plugin automatically send the resource pack to players?
+# Should the plugin automatically push the resource pack in real-time to online players when a disc is added/removed?
 auto-update-pack: true
+
+# ========================================
+# Java Resource Pack Delivery Settings
+# ========================================
+resource-pack:
+  # Whether to automatically send the resource pack to Java players when they join the server.
+  send-on-join: true
+  # Whether this pack should replace ALL existing server resource packs on the player's client.
+  # Set to 'false' (Recommended) to allow this pack to stack cleanly alongside your server.properties pack or ItemsAdder/Oraxen!
+  # Set to 'true' ONLY if you want this pack to wipe/override all other server packs.
+  replace-existing: false
+  # Whether the resource pack prompt is mandatory to accept to play.
+  required: false
+  # Optional custom prompt message shown when asking the player to download the pack (supports MiniMessage formatting, e.g. "<gold>Custom Disc Pack</gold>").
+  # Leave empty ("") for default vanilla prompt.
+  prompt: ""
 
 # Should we automatically run "geyser reload" after updating the Bedrock pack?
 # WARNING: This may cause temporary lag or disconnect some Bedrock players.

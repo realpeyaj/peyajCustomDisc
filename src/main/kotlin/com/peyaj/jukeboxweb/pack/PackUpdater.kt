@@ -43,6 +43,8 @@ object PackUpdater : Listener {
         return uuid.mostSignificantBits == 0L
     }
 
+    private val JAVA_PACK_UUID: UUID = UUID.nameUUIDFromBytes("peyajcustomdisc:java-pack".toByteArray())
+
     fun updateAllPlayers(plugin: PeyajCustomDisc) {
         // 1. Geyser Update (Attempts to copy pack to Geyser folder & reload Geyser if enabled)
         updateGeyserPack(plugin, forceReload = true)
@@ -62,19 +64,29 @@ object PackUpdater : Listener {
 
                     player.sendMessage(msg)
                     try {
-                        val packUuid = java.util.UUID.nameUUIDFromBytes("$zipUrl:$hash".toByteArray())
                         val packInfo = net.kyori.adventure.resource.ResourcePackInfo.resourcePackInfo()
-                            .id(packUuid)
+                            .id(JAVA_PACK_UUID)
                             .uri(java.net.URI.create(zipUrl))
                             .hash(hash)
                             .build()
-                        val request = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
+                        val replace = plugin.config.getBoolean("resource-pack.replace-existing", false)
+                        val requestBuilder = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
                             .packs(packInfo)
-                        player.sendResourcePacks(request)
-                    } catch (e: Exception) {
+                            .replace(replace)
+                        
+                        val promptText = plugin.config.getString("resource-pack.prompt", "")?.trim()
+                        if (!promptText.isNullOrEmpty()) {
+                            requestBuilder.prompt(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(promptText))
+                        }
+                        if (plugin.config.getBoolean("resource-pack.required", false)) {
+                            requestBuilder.required(true)
+                        }
+
+                        player.sendResourcePacks(requestBuilder.build())
+                    } catch (e: Throwable) {
                         try {
                             player.setResourcePack(zipUrl, hexStringToByteArray(hash))
-                        } catch (e2: Exception) {
+                        } catch (e2: Throwable) {
                             player.setResourcePack(zipUrl)
                         }
                     }
@@ -135,7 +147,8 @@ object PackUpdater : Listener {
         val plugin = PeyajCustomDisc.instance
         if (isBedrockPlayer(event.player)) return // Skip Java pack prompt for Bedrock
         
-        if (!plugin.config.getBoolean("auto-update-pack", true)) return
+        val sendOnJoin = plugin.config.getBoolean("resource-pack.send-on-join", plugin.config.getBoolean("auto-update-pack", true))
+        if (!sendOnJoin) return
     
         val urlBase = plugin.config.getString("public-url", "http://localhost:8080")?.trimEnd('/') ?: return
         val zipUrl = "$urlBase/download/pack"
@@ -144,22 +157,35 @@ object PackUpdater : Listener {
         if (hash.isNotEmpty()) {
             plugin.server.scheduler.runTaskLater(plugin, Runnable {
                 try {
-                    val packUuid = java.util.UUID.nameUUIDFromBytes("$zipUrl:$hash".toByteArray())
                     val packInfo = net.kyori.adventure.resource.ResourcePackInfo.resourcePackInfo()
-                        .id(packUuid)
+                        .id(JAVA_PACK_UUID)
                         .uri(java.net.URI.create(zipUrl))
                         .hash(hash)
                         .build()
-                    val request = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
+                    val replace = plugin.config.getBoolean("resource-pack.replace-existing", false)
+                    val requestBuilder = net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
                         .packs(packInfo)
-                        .replace(true)
-                        .build()
-                    event.player.sendResourcePacks(request)
-                } catch (e: Exception) {
+                        .replace(replace)
+                    
+                    val promptText = plugin.config.getString("resource-pack.prompt", "")?.trim()
+                    if (!promptText.isNullOrEmpty()) {
+                        requestBuilder.prompt(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(promptText))
+                    }
+                    if (plugin.config.getBoolean("resource-pack.required", false)) {
+                        requestBuilder.required(true)
+                    }
+
+                    event.player.sendResourcePacks(requestBuilder.build())
+                } catch (e: Throwable) {
+                    plugin.logger.fine("Adventure sendResourcePacks fallback triggered: ${e.message}")
                     try {
                         event.player.setResourcePack(zipUrl, hexStringToByteArray(hash))
-                    } catch (e2: Exception) {
-                        event.player.setResourcePack(zipUrl)
+                    } catch (e2: Throwable) {
+                        try {
+                            event.player.setResourcePack(zipUrl)
+                        } catch (e3: Throwable) {
+                            plugin.logger.warning("Failed to send resource pack to ${event.player.name}: ${e3.message}")
+                        }
                     }
                 }
             }, 20L)

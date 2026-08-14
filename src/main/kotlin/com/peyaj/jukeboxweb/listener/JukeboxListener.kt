@@ -35,6 +35,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
     )
     private val activeJukeboxes = mutableMapOf<Location, PlayingSession>()
     private val loopingJukeboxes = mutableSetOf<Location>()
+    private val interactCooldown = mutableMapOf<UUID, Long>()
 
     fun disable() {
         activeJukeboxes.keys.toList().forEach { stopVisuals(it) }
@@ -107,6 +108,11 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         val block = event.clickedBlock ?: return
         if (block.type != Material.JUKEBOX) return
 
+        val now = System.currentTimeMillis()
+        if (now - (interactCooldown[event.player.uniqueId] ?: 0L) < 50L) {
+            return
+        }
+
         // Ignore double trigger on OFF_HAND if main hand holds a custom disc
         if (event.hand == EquipmentSlot.OFF_HAND) {
             val mainHand = event.player.inventory.itemInMainHand
@@ -136,6 +142,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
 
         // CASE 1: Jukebox contains a CUSTOM disc -> Eject it or swap it!
         if (existingDiscId != null) {
+            interactCooldown[event.player.uniqueId] = now
             event.isCancelled = true // Cancel vanilla interaction to prevent double action bar & vanilla sounds!
             
             // Stop existing custom session & remove holograms
@@ -174,6 +181,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                 return // Do not cancel the event! Vanilla will eject the vanilla disc.
             }
 
+            interactCooldown[event.player.uniqueId] = now
             event.isCancelled = true // Cancel vanilla interaction to prevent double action bar & vanilla sounds!
             insertAndPlayCustomDisc(event.player, block, jukebox, itemInHand, holdingDiscId, event.hand ?: EquipmentSlot.HAND)
             return
@@ -293,19 +301,50 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         }
     }
     
-    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onBlockBreak(event: org.bukkit.event.block.BlockBreakEvent) {
         if (event.block.type == Material.JUKEBOX) {
-            val session = activeJukeboxes[event.block.location]
-            if (session != null) {
-                stopMusicAtLocationWithSound(event.block.location, session.discId)
+            handleJukeboxBreak(event.block)
+        }
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onEntityExplode(event: org.bukkit.event.entity.EntityExplodeEvent) {
+        event.blockList().toList().forEach { block ->
+            if (block.type == Material.JUKEBOX) {
+                handleJukeboxBreak(block)
             }
         }
     }
-    
-    private fun stopMusicAtLocation(location: Location) {
-        val session = activeJukeboxes[location] ?: return
-        stopVisuals(location)
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onBlockExplode(event: org.bukkit.event.block.BlockExplodeEvent) {
+        event.blockList().toList().forEach { block ->
+            if (block.type == Material.JUKEBOX) {
+                handleJukeboxBreak(block)
+            }
+        }
+    }
+
+    private fun handleJukeboxBreak(block: org.bukkit.block.Block) {
+        val session = activeJukeboxes[block.location]
+        if (session != null) {
+            // Drop the custom disc item natively
+            val discItem = plugin.discManager.createDiscItem(session.discId)
+            if (discItem != null) {
+                block.world.dropItemNaturally(block.location.clone().add(0.5, 0.5, 0.5), discItem)
+            }
+            
+            // Clear the jukebox so vanilla doesn't drop anything else
+            val state = block.state as? Jukebox
+            if (state != null) {
+                try { state.inventory.clear() } catch (ignored: Exception) {}
+                try { state.setRecord(null) } catch (ignored: Exception) {}
+                state.update(true, false)
+            }
+            
+            stopMusicAtLocationWithSound(block.location, session.discId)
+        }
     }
     
     private fun stopMusicAtLocationWithSound(location: Location, discId: String) {
@@ -347,7 +386,10 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         val task = plugin.server.scheduler.runTaskTimer(plugin, Runnable {
             // Kill only if block changed or explicit stop
             if (location.isChunkLoaded && location.block.type != Material.JUKEBOX) {
-                stopMusicAtLocation(location)
+                val session = activeJukeboxes[location]
+                if (session != null) {
+                    stopMusicAtLocationWithSound(location, session.discId)
+                }
                 return@Runnable
             }
             
@@ -375,7 +417,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                              playCustomDiscSound(world, location, discId)
                              session.startTime = System.currentTimeMillis()
                          } else {
-                             stopMusicAtLocation(location)
+                             stopMusicAtLocationWithSound(location, discId)
                              return@Runnable
                          }
                      }
@@ -401,8 +443,8 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         updateHologramText(hologram, discName, author, looping)
         hologram.billboard = Display.Billboard.CENTER
         // Enforce non-see-through occlusion for Bedrock block clipping
-        hologram.isSeeThrough = false
-        hologram.isDefaultBackground = true
+        hologram.isDefaultBackground = false
+        hologram.backgroundColor = org.bukkit.Color.fromARGB(0, 0, 0, 0)
         hologram.transformation = hologram.transformation.apply { scale.set(0.5f, 0.5f, 0.5f) }
         hologram.isPersistent = false
         hologram.addScoreboardTag("peyaj_jukebox_display")
@@ -442,33 +484,30 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
 
     private fun getJukeboxVolume(): Float = plugin.config.getDouble("jukebox.volume", 1.0).toFloat()
     private fun getJukeboxPitch(): Float = plugin.config.getDouble("jukebox.pitch", 1.0).toFloat()
-    private fun getJukeboxRange(): Double = plugin.config.getDouble("jukebox.range", 48.0)
-
-    private fun getBroadcastVolume(): Float {
-        val baseVolume = getJukeboxVolume()
-        val range = getJukeboxRange()
-        // Minecraft attenuation distance = 16 blocks * volume
-        return (baseVolume * (range / 16.0)).toFloat()
-    }
+    private fun getJukeboxRange(): Double = plugin.config.getDouble("jukebox.range", 64.0)
 
     // Sound playback — sends colon-separated key to Java players and dot-separated key to Bedrock players
     private fun playCustomDiscSound(world: org.bukkit.World, location: Location, discId: String) {
         val range = getJukeboxRange()
-        val volume = getBroadcastVolume()
+        val baseVolume = getJukeboxVolume()
         val pitch = getJukeboxPitch()
         val discCleanId = discId.lowercase().replace(Regex("[^a-z0-9_]"), "_")
         val javaKey = "peyajcustomdisc:disc.$discId"
         val bedrockKey = "peyajcustomdisc.disc.$discCleanId"
         
-        // Bedrock uses volume to calculate falloff distance heavily, we multiply it so it is exactly 4x of Java range
-        val bedrockVolume = volume * 4.0f
+        // Java relies on 'attenuation_distance' embedded in the resource pack, so volume just scales the base amplitude (usually 1.0)
+        // This gives a perfect linear fade out to the configured range.
+        val javaVolume = baseVolume
+        
+        // Bedrock uses volume to calculate falloff distance heavily (vol 1.0 = ~16 blocks)
+        val bedrockVolume = baseVolume * (range / 16.0).toFloat()
 
         world.getNearbyPlayers(location, range).forEach { p ->
             if (isBedrock(p)) {
                 p.playSound(location, bedrockKey, SoundCategory.RECORDS, bedrockVolume, pitch)
                 p.playSound(location, "disc.$discCleanId", SoundCategory.RECORDS, bedrockVolume, pitch)
             } else {
-                p.playSound(location, javaKey, SoundCategory.RECORDS, volume, pitch)
+                p.playSound(location, javaKey, SoundCategory.RECORDS, javaVolume, pitch)
             }
         }
     }

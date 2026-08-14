@@ -64,7 +64,10 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
             {
               "pack": {
                 "pack_format": 34,
-                "supported_formats": [15, 60],
+                "supported_formats": {
+                  "min_inclusive": 15,
+                  "max_inclusive": 65
+                },
                 "description": "peyajCustomDisc Custom Music"
               }
             }
@@ -116,13 +119,15 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
                     bedrockOggFile.copyTo(bedrockTarget, overwrite = true)
                 }
 
+                val range = plugin.config.getDouble("jukebox.range", 64.0).toInt().coerceAtLeast(16)
+
                 soundsMap["disc.$discCleanId"] = mapOf(
                     "category" to "record",
                     "sounds" to listOf(
                         mapOf(
                             "name" to "peyajcustomdisc:disc/$discCleanId",
                             "stream" to true,
-                            "attenuation_distance" to 64
+                            "attenuation_distance" to range
                         )
                     )
                 )
@@ -132,8 +137,8 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
                     "sounds" to listOf(
                         mapOf("name" to "sounds/peyajcustomdisc/$discCleanId", "volume" to 1.0, "pitch" to 1.0, "stream" to true)
                     ),
-                    "max_distance" to 64,
-                    "min_distance" to 4
+                    "max_distance" to range,
+                    "min_distance" to (range / 16).coerceAtLeast(1)
                 )
 
                 soundDefinitions["peyajcustomdisc.disc.$discCleanId"] = bedrockSoundEntry
@@ -252,7 +257,7 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
         zipFolder(packFolder, zipFile)
         plugin.logger.info("✔ Java Resource pack generated at ${zipFile.absolutePath}")
 
-        // Build Geyser Custom Mappings for Bedrock item textures
+        // Build Geyser Custom Mappings for Bedrock item textures (v2 format)
         val customMappingsDir = File(bedrockFolder, "custom_mappings")
         customMappingsDir.mkdirs()
         val geyserItemsMap = mutableMapOf<String, MutableList<Map<String, Any>>>()
@@ -261,17 +266,21 @@ class PackGenerator(private val plugin: PeyajCustomDisc) {
             val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
             val cmd = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
             
-            val entry = mapOf(
+            val entry = mapOf<String, Any>(
+                "type" to "legacy",
                 "custom_model_data" to cmd,
-                "name" to "peyaj_music_disc_$discCleanId",
-                "icon" to "music_disc_$discCleanId"
+                "bedrock_identifier" to "peyajcustomdisc:music_disc_$discCleanId",
+                "display_name" to disc.name,
+                "bedrock_options" to mapOf(
+                    "icon" to "music_disc_$discCleanId"
+                )
             )
             geyserItemsMap.computeIfAbsent("minecraft:paper") { mutableListOf() }.add(entry)
         }
 
         val geyserMappingsFile = File(customMappingsDir, "peyaj_mappings.json")
         mapper.writerWithDefaultPrettyPrinter().writeValue(geyserMappingsFile, mapOf(
-            "format_version" to 1,
+            "format_version" to 2,
             "items" to geyserItemsMap
         ))
 

@@ -90,38 +90,150 @@ class WebServer(private val plugin: PeyajCustomDisc) {
         app?.get("/unauthorized") { ctx ->
             val error = ctx.queryParam("error")
             val errorMsg = when (error) {
-                "invalid_token" -> "<div style='color:#ef4444; margin-bottom:12px;'>⚠️ Invalid or Expired Token Link.</div>"
-                "invalid_password" -> "<div style='color:#ef4444; margin-bottom:12px;'>❌ Incorrect Admin Password.</div>"
+                "invalid_token" -> "<div class='error-msg'>Invalid or Expired Token Link.</div>"
+                "invalid_password" -> "<div class='error-msg'>Incorrect Admin Password.</div>"
                 else -> ""
             }
             ctx.html("""
                 <!DOCTYPE html>
-                <html>
+                <html lang="en">
                 <head>
                     <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Disc Creator - Security Login</title>
+                    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
                     <style>
-                        body { background: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                        .card { background: #1e293b; padding: 32px; border-radius: 16px; border: 1px solid #334155; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
-                        h2 { margin-top: 0; color: #38bdf8; }
-                        input[type="password"] { width: 100%; padding: 12px; margin: 12px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; font-size: 16px; text-align: center; }
-                        button { width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
-                        button:hover { background: #0369a1; }
-                        .help { margin-top: 20px; font-size: 13px; color: #94a3b8; line-height: 1.4; }
-                        code { background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #facc15; }
+                        * {
+                            box-sizing: border-box;
+                            margin: 0;
+                            padding: 0;
+                            font-family: 'VT323', monospace;
+                            -webkit-font-smoothing: antialiased;
+                        }
+                        body {
+                            background-color: #1a1a1a;
+                            background-image:
+                                linear-gradient(45deg, #2b2b2b 25%, transparent 25%),
+                                linear-gradient(-45deg, #2b2b2b 25%, transparent 25%),
+                                linear-gradient(45deg, transparent 75%, #2b2b2b 75%),
+                                linear-gradient(-45deg, transparent 75%, #2b2b2b 75%);
+                            background-size: 20px 20px;
+                            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+                            min-height: 100vh;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            color: #fff;
+                            padding: 20px;
+                        }
+                        .container {
+                            background-color: #c6c6c6;
+                            padding: 4px;
+                            width: 100%;
+                            max-width: 420px;
+                            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+                        }
+                        .window-inner {
+                            background-color: #c6c6c6;
+                            border: 4px solid #fff;
+                            border-bottom-color: #555;
+                            border-right-color: #555;
+                            padding: 24px;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 16px;
+                            text-align: center;
+                        }
+                        h1 {
+                            font-size: 2.8rem;
+                            color: #202020;
+                            text-shadow: 1px 1px 0px #ffffff;
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                            font-weight: bold;
+                        }
+                        .subtitle {
+                            font-size: 1.3rem;
+                            color: #333333;
+                            font-weight: bold;
+                        }
+                        .error-msg {
+                            background: #2b0000;
+                            border: 2px solid #ff5555;
+                            color: #ff5555;
+                            padding: 8px 12px;
+                            font-size: 1.2rem;
+                            font-weight: bold;
+                            text-shadow: none;
+                        }
+                        input[type="password"] {
+                            width: 100%;
+                            background: #000000;
+                            border: 2px solid #a0a0a0;
+                            border-top-color: #555;
+                            border-left-color: #555;
+                            color: #ffffff;
+                            padding: 10px 14px;
+                            font-size: 1.4rem;
+                            outline: none;
+                            text-align: center;
+                        }
+                        input[type="password"]:focus {
+                            border-color: #ffffff;
+                        }
+                        .btn {
+                            background-color: #5c5c5c;
+                            border: 3px solid #ffffff;
+                            border-bottom-color: #2a2a2a;
+                            border-right-color: #2a2a2a;
+                            color: #ffffff !important;
+                            font-size: 1.6rem;
+                            font-weight: bold;
+                            padding: 10px 16px;
+                            cursor: pointer;
+                            text-transform: uppercase;
+                            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
+                            letter-spacing: 1px;
+                            width: 100%;
+                            margin-top: 10px;
+                        }
+                        .btn:hover {
+                            background-color: #707070;
+                        }
+                        .btn:active {
+                            border: 3px solid #2a2a2a;
+                            border-bottom-color: #ffffff;
+                            border-right-color: #ffffff;
+                        }
+                        .help {
+                            font-size: 1.15rem;
+                            color: #333333;
+                            font-weight: bold;
+                            line-height: 1.4;
+                            margin-top: 4px;
+                        }
+                        code {
+                            background: #000000;
+                            padding: 2px 6px;
+                            border: 1px solid #555;
+                            color: #ffff55;
+                            font-size: 1.15rem;
+                        }
                     </style>
                 </head>
                 <body>
-                    <div class="card">
-                        <h2>🔒 Disc Creator</h2>
-                        <p style="font-size:14px; color:#cbd5e1;">Security Authentication Required</p>
-                        $errorMsg
-                        <form action="/login" method="POST">
-                            <input type="password" name="password" placeholder="Enter Admin Password" required autofocus />
-                            <button type="submit">Unlock Disc Studio</button>
-                        </form>
-                        <div class="help">
-                            Or run <code>/disc web</code> in-game to generate a 1-click login link.
+                    <div class="container">
+                        <div class="window-inner">
+                            <h1>Disc Creator</h1>
+                            <p class="subtitle">Security Authentication Required</p>
+                            $errorMsg
+                            <form action="/login" method="POST">
+                                <input type="password" name="password" placeholder="Enter Admin Password" required autofocus />
+                                <button type="submit" class="btn">Login</button>
+                            </form>
+                            <div class="help">
+                                Or run <code>/disc web</code> in-game to generate a 1-click login link.
+                            </div>
                         </div>
                     </div>
                 </body>
@@ -252,7 +364,10 @@ class WebServer(private val plugin: PeyajCustomDisc) {
             val packFile = plugin.packGenerator.getPackFile()
             if (packFile.exists()) {
                 ctx.contentType("application/zip")
+                ctx.header("Content-Length", packFile.length().toString())
                 ctx.header("Content-Disposition", "attachment; filename=\"peyajCD-Java.zip\"")
+                ctx.header("Accept-Ranges", "bytes")
+                ctx.header("Cache-Control", "no-cache, no-store, must-revalidate")
                 ctx.result(packFile.inputStream())
             } else {
                 ctx.status(404).result("Pack not generated yet")
@@ -263,7 +378,10 @@ class WebServer(private val plugin: PeyajCustomDisc) {
             val packFile = plugin.packGenerator.getBedrockPackFile()
             if (packFile.exists()) {
                 ctx.contentType("application/zip") 
+                ctx.header("Content-Length", packFile.length().toString())
                 ctx.header("Content-Disposition", "attachment; filename=\"peyajCD-Bedrock.mcpack\"")
+                ctx.header("Accept-Ranges", "bytes")
+                ctx.header("Cache-Control", "no-cache, no-store, must-revalidate")
                 ctx.result(packFile.inputStream())
             } else {
                 ctx.status(404).result("Bedrock Pack not generated yet")
