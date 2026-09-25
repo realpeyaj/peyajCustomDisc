@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "peyajcustomdisc",
+  "version": "${version}",
+  "name": "peyajCustomDisc",
+  "description": "Custom music disc creator & manager with web dashboard, dynamic resource packs, and Geyser support.",
+  "authors": [
+    "peyaj"
+  ],
+  "contact": {
+    "homepage": "https://github.com/realpeyaj/peyajCustomDisc"
+  },
+  "license": "GPL-3.0-only",
+  "icon": "assets/peyajcustomdisc/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.peyaj.jukeboxweb.fabric.PeyajCustomDiscFabric"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": ">=26.0",
+    "fabric-language-kotlin": ">=1.14.0",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "geyser-fabric": "*"
+  }
+}
