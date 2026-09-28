@@ -28,10 +28,7 @@ class PaperDiscManager(private val plugin: PeyajCustomDisc) : DiscManager(
         loreLines.add(Component.text("Artist: ${disc.author}", NamedTextColor.YELLOW))
         
         if (disc.durationSeconds > 0) {
-            val mins = disc.durationSeconds / 60
-            val secs = disc.durationSeconds % 60
-            val durStr = String.format("%d:%02d", mins, secs)
-            loreLines.add(Component.text("Duration: $durStr", NamedTextColor.GRAY))
+            loreLines.add(Component.text("Duration: ${disc.formattedDuration()}", NamedTextColor.GRAY))
         }
         
         if (disc.lore.isNotEmpty()) {
@@ -42,9 +39,7 @@ class PaperDiscManager(private val plugin: PeyajCustomDisc) : DiscManager(
         }
         meta.lore(loreLines)
         
-        val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-        val modelData = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
-        meta.setCustomModelData(modelData)
+        meta.setCustomModelData(disc.effectiveCustomModelData)
         
         meta.persistentDataContainer.set(namespaceKey, PersistentDataType.STRING, disc.id)
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)

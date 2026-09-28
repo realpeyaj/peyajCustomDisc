@@ -112,12 +112,6 @@ object FabricPackUpdater {
     }
 
     private fun isBedrockPlayer(player: ServerPlayer): Boolean {
-        try {
-            val geyserApiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
-            val api = geyserApiClass.getMethod("api").invoke(null)
-            val isBedrock = geyserApiClass.getMethod("isBedrockPlayer", UUID::class.java).invoke(api, player.uuid) as Boolean
-            if (isBedrock) return true
-        } catch (ignored: Exception) {}
-        return player.uuid.mostSignificantBits == 0L
+        return com.peyaj.jukeboxweb.fabric.geyser.FabricGeyserHandler.isBedrockPlayer(player.uuid)
     }
 }

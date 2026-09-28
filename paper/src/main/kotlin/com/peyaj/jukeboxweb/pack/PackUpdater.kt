@@ -14,34 +14,8 @@ object PackUpdater : Listener {
     // PackGenerator has getPackHash() returning Hex String, perfect.
     
     // Helper Check
-    private fun isBedrockPlayer(player: org.bukkit.entity.Player): Boolean {
-        val uuid = player.uniqueId
-        
-        // 1. Geyser API Check
-        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("Geyser-Spigot") || 
-            org.bukkit.Bukkit.getPluginManager().isPluginEnabled("Geyser-Paper") ||
-            org.bukkit.Bukkit.getPluginManager().isPluginEnabled("Geyser")) {
-            try {
-                val apiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
-                val api = apiClass.getMethod("api").invoke(null)
-                val isBedrock = apiClass.getMethod("isBedrockPlayer", UUID::class.java).invoke(api, uuid) as Boolean
-                if (isBedrock) return true
-            } catch (ignored: Exception) {}
-        }
-        
-        // 2. Floodgate API Check
-        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
-            try {
-                val apiClass = Class.forName("org.geysermc.floodgate.api.FloodgateApi")
-                val api = apiClass.getMethod("getInstance").invoke(null)
-                val isBedrock = apiClass.getMethod("isFloodgatePlayer", UUID::class.java).invoke(api, uuid) as Boolean
-                if (isBedrock) return true
-            } catch (ignored: Exception) {}
-        }
-        
-        // 3. Fallback check: Floodgate UUIDs often have 0L mostSignificantBits
-        return uuid.mostSignificantBits == 0L
-    }
+    private fun isBedrockPlayer(player: org.bukkit.entity.Player): Boolean =
+        com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(player)
 
     private val JAVA_PACK_UUID: UUID = UUID.nameUUIDFromBytes("peyajcustomdisc:java-pack".toByteArray())
 

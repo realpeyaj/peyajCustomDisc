@@ -41,38 +41,9 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         activeJukeboxes.keys.toList().forEach { stopVisuals(it) }
     }
 
-    private fun isBedrock(player: Player): Boolean {
-        val uuid = player.uniqueId
-
-        // 1. Geyser API Check
-        if (Bukkit.getPluginManager().isPluginEnabled("Geyser-Spigot") ||
-            Bukkit.getPluginManager().isPluginEnabled("Geyser-Paper") ||
-            Bukkit.getPluginManager().isPluginEnabled("Geyser")) {
-            try {
-                val apiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
-                val api = apiClass.getMethod("api").invoke(null)
-                val isBedrock = apiClass.getMethod("isBedrockPlayer", UUID::class.java).invoke(api, uuid) as Boolean
-                if (isBedrock) return true
-            } catch (ignored: Exception) {}
-        }
-
-        // 2. Floodgate API Check
-        if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
-            try {
-                val apiClass = Class.forName("org.geysermc.floodgate.api.FloodgateApi")
-                val api = apiClass.getMethod("getInstance").invoke(null)
-                val isBedrock = apiClass.getMethod("isFloodgatePlayer", UUID::class.java).invoke(api, uuid) as Boolean
-                if (isBedrock) return true
-            } catch (ignored: Exception) {}
-        }
-
-        // 3. Fallback check: Floodgate UUIDs have 0L mostSignificantBits
-        return uuid.mostSignificantBits == 0L
-    }
-
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
-        val bedrock = isBedrock(event.player)
+        val bedrock = com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(event.player)
         activeJukeboxes.values.forEach { session ->
             val javaHolo = Bukkit.getEntity(session.holoJavaUuid)
             val bedrockHolo = Bukkit.getEntity(session.holoBedrockUuid)
@@ -391,7 +362,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         // Setup Visibility
         Bukkit.getOnlinePlayers().forEach { p ->
             if (p.world == world) {
-                 if (isBedrock(p)) {
+                 if (com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)) {
                      p.hideEntity(plugin, holoJava)
                  } else {
                      p.hideEntity(plugin, holoBedrock)
@@ -530,8 +501,8 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         val range = getJukeboxRange()
         val baseVolume = getJukeboxVolume()
         val pitch = getJukeboxPitch()
-        val discCleanId = discId.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-        val javaKey = "peyajcustomdisc:disc.$discId"
+        val discCleanId = com.peyaj.jukeboxweb.disc.CustomDisc.cleanId(discId)
+        val javaKey = "peyajcustomdisc:disc.$discCleanId"
         val bedrockKey = "peyajcustomdisc.disc.$discCleanId"
         
         // Java relies on 'attenuation_distance' embedded in the resource pack, so volume just scales the base amplitude (usually 1.0)
@@ -542,7 +513,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         val bedrockVolume = baseVolume * (range / 16.0).toFloat()
 
         world.getNearbyPlayers(location, range).forEach { p ->
-            if (isBedrock(p)) {
+            if (com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)) {
                 p.playSound(location, bedrockKey, SoundCategory.RECORDS, bedrockVolume, pitch)
                 p.playSound(location, "disc.$discCleanId", SoundCategory.RECORDS, bedrockVolume, pitch)
             } else {
@@ -554,12 +525,12 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
     // Sound stop — stops both Java and Bedrock sound keys for nearby players
     private fun stopCustomDiscSound(world: org.bukkit.World, location: Location, discId: String) {
         val range = getJukeboxRange()
-        val discCleanId = discId.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-        val javaKey = "peyajcustomdisc:disc.$discId"
+        val discCleanId = com.peyaj.jukeboxweb.disc.CustomDisc.cleanId(discId)
+        val javaKey = "peyajcustomdisc:disc.$discCleanId"
         val bedrockKey = "peyajcustomdisc.disc.$discCleanId"
 
         world.getNearbyPlayers(location, range).forEach { p ->
-            if (isBedrock(p)) {
+            if (com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)) {
                 p.stopSound(bedrockKey, SoundCategory.RECORDS)
                 p.stopSound("disc.$discCleanId", SoundCategory.RECORDS)
             } else {

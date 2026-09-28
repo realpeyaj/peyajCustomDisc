@@ -31,7 +31,7 @@ class PackGenerator(
     fun buildResourcePack(discs: List<CustomDisc>, force: Boolean = false) {
         val packMetaFile = File(dataFolder, "pack_meta.json")
         val currentDiscHash = discs.map {
-            val cleanId = it.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+            val cleanId = it.cleanId
             val hasStereo = File(dataFolder, "discs/${it.id}_stereo.ogg").exists() || File(dataFolder, "discs/${cleanId}_stereo.ogg").exists()
             "${it.id}:${it.name}:${it.style}:$hasStereo"
         }.sorted().joinToString("|")
@@ -110,7 +110,7 @@ class PackGenerator(
         val overridesMap = mutableMapOf<String, MutableList<Map<String, Any>>>()
 
         for (disc in discs) {
-            val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+            val discCleanId = disc.cleanId
             val sourceFileMp3 = File(dataFolder, "discs/${disc.id}.mp3")
             val sourceFileOgg = File(dataFolder, "discs/${disc.id}.ogg")
             var sourceFileStereoOgg = File(dataFolder, "discs/${disc.id}_stereo.ogg")
@@ -228,7 +228,7 @@ class PackGenerator(
             }
 
             val textureFile = File(dataFolder, "discs/${disc.id}.png")
-            val cmd = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
+            val cmd = disc.effectiveCustomModelData
 
             val mcTextureTarget = File(mcTexturesDir, "disc_$discCleanId.png")
             val mcTextureTargetDirect = File(mcTexturesDir, "$discCleanId.png")
@@ -339,7 +339,7 @@ class PackGenerator(
         mapper.writerWithDefaultPrettyPrinter().writeValue(soundsJsonFile, soundsMap)
         
         zipFolder(packFolder, zipFile)
-        logInfo("✔ Java Resource pack generated at ${zipFile.absolutePath}")
+        logInfo("Java Resource pack generated at ${zipFile.absolutePath}")
 
         // Build Geyser Custom Mappings for Bedrock item textures (v2 format)
         val customMappingsDir = File(bedrockFolder, "custom_mappings")
@@ -347,8 +347,8 @@ class PackGenerator(
         val geyserItemsMap = mutableMapOf<String, MutableList<Map<String, Any>>>()
 
         for (disc in discs) {
-            val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-            val cmd = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
+            val discCleanId = disc.cleanId
+            val cmd = disc.effectiveCustomModelData
             
             val entry = mapOf<String, Any>(
                 "type" to "legacy",
@@ -439,7 +439,7 @@ class PackGenerator(
         ))
 
         zipFolder(bedrockFolder, bedrockPackFile)
-        logInfo("✔ Bedrock Resource pack generated at ${bedrockPackFile.absolutePath}")
+        logInfo("Bedrock Resource pack generated at ${bedrockPackFile.absolutePath}")
 
         val parentDir = dataFolder.parentFile
         val geyserDirs = if (parentDir != null) {
@@ -456,12 +456,12 @@ class PackGenerator(
                     val packsDir = File(geyserDir, "packs")
                     packsDir.mkdirs()
                     bedrockPackFile.copyTo(File(packsDir, "peyajCD-Bedrock.mcpack"), overwrite = true)
-                    logInfo("✔ Bedrock pack auto-copied to ${packsDir.path}/peyajCD-Bedrock.mcpack")
+                    logInfo("Bedrock pack auto-copied to ${packsDir.path}/peyajCD-Bedrock.mcpack")
 
                     val mappingsDir = File(geyserDir, "custom_mappings")
                     mappingsDir.mkdirs()
                     geyserMappingsFile.copyTo(File(mappingsDir, "peyaj_mappings.json"), overwrite = true)
-                    logInfo("✔ Geyser custom_mappings auto-copied to ${mappingsDir.path}/peyaj_mappings.json")
+                    logInfo("Geyser custom_mappings auto-copied to ${mappingsDir.path}/peyaj_mappings.json")
                 } catch (e: Exception) {
                     logWarning("Could not auto-copy Bedrock pack/mappings to ${geyserDir.path}: ${e.message}")
                 }
@@ -472,7 +472,7 @@ class PackGenerator(
         try {
             val packMetaFile = File(dataFolder, "pack_meta.json")
             val currentDiscHash = discs.map {
-                val cleanId = it.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+                val cleanId = it.cleanId
                 val hasStereo = File(dataFolder, "discs/${it.id}_stereo.ogg").exists() || File(dataFolder, "discs/${cleanId}_stereo.ogg").exists()
                 "${it.id}:${it.name}:${it.style}:$hasStereo"
             }.sorted().joinToString("|")

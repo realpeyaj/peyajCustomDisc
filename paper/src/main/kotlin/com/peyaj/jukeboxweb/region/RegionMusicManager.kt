@@ -202,34 +202,12 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     }
 
     private fun isBedrock(player: Player): Boolean {
-        val uuid = player.uniqueId
-
-        if (Bukkit.getPluginManager().isPluginEnabled("Geyser-Spigot") ||
-            Bukkit.getPluginManager().isPluginEnabled("Geyser-Paper") ||
-            Bukkit.getPluginManager().isPluginEnabled("Geyser")) {
-            try {
-                val apiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
-                val api = apiClass.getMethod("api").invoke(null)
-                val isBedrock = apiClass.getMethod("isBedrockPlayer", UUID::class.java).invoke(api, uuid) as Boolean
-                if (isBedrock) return true
-            } catch (ignored: Exception) {}
-        }
-
-        if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
-            try {
-                val apiClass = Class.forName("org.geysermc.floodgate.api.FloodgateApi")
-                val api = apiClass.getMethod("getInstance").invoke(null)
-                val isBedrock = apiClass.getMethod("isFloodgatePlayer", UUID::class.java).invoke(api, uuid) as Boolean
-                if (isBedrock) return true
-            } catch (ignored: Exception) {}
-        }
-
-        return uuid.mostSignificantBits == 0L
+        return com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(player)
     }
 
     // Ensures discs/<id>_stereo.ogg exists for stereo playback, converting from mp3 or ogg if necessary
     fun ensureStereoFileExists(discId: String): Boolean {
-        val discCleanId = discId.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+        val discCleanId = com.peyaj.jukeboxweb.disc.CustomDisc.cleanId(discId)
         val stereoOgg = File(plugin.dataFolder, "discs/${discId}_stereo.ogg")
         val cleanStereoOgg = File(plugin.dataFolder, "discs/${discCleanId}_stereo.ogg")
         if (stereoOgg.exists() || cleanStereoOgg.exists()) return false
@@ -411,14 +389,12 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             return
         }
         
-        val discCleanId = entry.discId.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+        val discCleanId = disc.cleanId
         val stereoFile = File(plugin.dataFolder, "discs/${discCleanId}_stereo.ogg")
         val altStereoFile = File(plugin.dataFolder, "discs/${entry.discId}_stereo.ogg")
         val hasStereo = entry.stereo && (stereoFile.exists() || altStereoFile.exists())
 
         val soundKeyName = if (hasStereo) "peyajcustomdisc:disc.${discCleanId}_stereo" else "peyajcustomdisc:disc.$discCleanId"
-        val bedrockKeyName = if (hasStereo) "peyajcustomdisc.disc.${discCleanId}_stereo" else "peyajcustomdisc.disc.$discCleanId"
-        val bedrockShortKey = if (hasStereo) "disc.${discCleanId}_stereo" else "disc.$discCleanId"
 
         if (isBedrock(player)) {
             // Single sound packet to Bedrock matching sound_definitions.json (is3D: false handles 2D stereo)
@@ -450,7 +426,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     }
 
     private fun stopMusicForPlayer(player: Player, discId: String) {
-        val discCleanId = discId.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+        val discCleanId = com.peyaj.jukeboxweb.disc.CustomDisc.cleanId(discId)
 
         // Adventure stops (both default and RECORD source)
         try {

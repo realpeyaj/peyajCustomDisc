@@ -73,7 +73,7 @@ object FabricJukeboxListener {
                     ticksRemaining = duration * 20
                 )
 
-                val soundId = Identifier.of("peyajcustomdisc", "disc.${disc.id}")
+                val soundId = Identifier.of("peyajcustomdisc", "disc.${disc.cleanId}")
                 val soundEvent = SoundEvent.of(soundId)
                 world.playSound(null, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5, soundEvent, SoundCategory.RECORDS, 1.0f, 1.0f)
 
@@ -140,7 +140,7 @@ object FabricJukeboxListener {
     }
 
     private fun stopPlaying(world: ServerWorld, pos: BlockPos, discId: String) {
-        val soundId = Identifier.of("peyajcustomdisc", "disc.$discId")
+        val soundId = Identifier.of("peyajcustomdisc", "disc.${com.peyaj.jukeboxweb.disc.CustomDisc.cleanId(discId)}")
         val packet = StopSoundS2CPacket(soundId, SoundCategory.RECORDS)
         world.server.playerManager.playerList.forEach { p ->
             p.networkHandler.sendPacket(packet)

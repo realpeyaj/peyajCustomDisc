@@ -23,9 +23,7 @@ class FabricDiscManager(
         
         val item = ItemStack(Items.PAPER)
         
-        val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-        val cmd = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
-        item.set(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelDataComponent(cmd))
+        item.set(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelDataComponent(disc.effectiveCustomModelData))
         
         item.set(DataComponentTypes.ITEM_NAME, Text.literal("♫ ${disc.name} ♫").formatted(Formatting.AQUA))
         
@@ -33,10 +31,7 @@ class FabricDiscManager(
         loreLines.add(Text.literal("Artist: ${disc.author}").formatted(Formatting.YELLOW))
         
         if (disc.durationSeconds > 0) {
-            val mins = disc.durationSeconds / 60
-            val secs = disc.durationSeconds % 60
-            val durStr = String.format("%d:%02d", mins, secs)
-            loreLines.add(Text.literal("Duration: $durStr").formatted(Formatting.GRAY))
+            loreLines.add(Text.literal("Duration: ${disc.formattedDuration()}").formatted(Formatting.GRAY))
         }
         
         if (disc.lore.isNotEmpty()) {

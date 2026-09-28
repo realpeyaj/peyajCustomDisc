@@ -45,6 +45,35 @@ object GeyserHandler {
         }
     }
 
+    fun isBedrockPlayer(player: org.bukkit.entity.Player): Boolean = isBedrockPlayer(player.uniqueId)
+
+    fun isBedrockPlayer(uuid: java.util.UUID): Boolean {
+        // 1. Geyser API Check
+        if (Bukkit.getPluginManager().isPluginEnabled("Geyser-Spigot") || 
+            Bukkit.getPluginManager().isPluginEnabled("Geyser-Paper") ||
+            Bukkit.getPluginManager().isPluginEnabled("Geyser")) {
+            try {
+                val apiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
+                val api = apiClass.getMethod("api").invoke(null)
+                val isBedrock = apiClass.getMethod("isBedrockPlayer", java.util.UUID::class.java).invoke(api, uuid) as Boolean
+                if (isBedrock) return true
+            } catch (ignored: Exception) {}
+        }
+
+        // 2. Floodgate API Check
+        if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+            try {
+                val apiClass = Class.forName("org.geysermc.floodgate.api.FloodgateApi")
+                val api = apiClass.getMethod("getInstance").invoke(null)
+                val isBedrock = apiClass.getMethod("isFloodgatePlayer", java.util.UUID::class.java).invoke(api, uuid) as Boolean
+                if (isBedrock) return true
+            } catch (ignored: Exception) {}
+        }
+
+        // 3. Fallback check: Floodgate UUIDs often have 0L mostSignificantBits
+        return uuid.mostSignificantBits == 0L
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun registerCustomItems(plugin: PeyajCustomDisc, event: Any) {
         try {
@@ -54,8 +83,8 @@ object GeyserHandler {
             val itemDataClass = Class.forName("org.geysermc.geyser.api.item.custom.CustomItemData")
 
             for (disc in discs) {
-                val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-                val cmd = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
+                val discCleanId = disc.cleanId
+                val cmd = disc.effectiveCustomModelData
 
                 // Build CustomItemOptions
                 val optionsBuilder = optionsClass.getMethod("builder").invoke(null)

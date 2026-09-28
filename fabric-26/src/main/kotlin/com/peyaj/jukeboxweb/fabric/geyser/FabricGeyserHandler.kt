@@ -35,7 +35,7 @@ object FabricGeyserHandler {
             }
 
             subscribeMethod.invoke(eventBus, registrarProxy, eventClass, consumer)
-            PeyajCustomDiscFabric.logger.info("✔ Geyser-Fabric Bedrock integration initialized.")
+            PeyajCustomDiscFabric.logger.info("Geyser-Fabric Bedrock integration initialized.")
         } catch (e: Throwable) {
             PeyajCustomDiscFabric.logger.warn("Geyser integration notice: ${e.message}")
         }
@@ -49,8 +49,8 @@ object FabricGeyserHandler {
             val itemDataClass = Class.forName("org.geysermc.geyser.api.item.custom.CustomItemData")
 
             for (disc in discs) {
-                val discCleanId = disc.id.lowercase().replace(Regex("[^a-z0-9_]"), "_")
-                val cmd = if (disc.customModelData != 0) disc.customModelData else (10000 + Math.abs(discCleanId.hashCode()) % 50000)
+                val discCleanId = disc.cleanId
+                val cmd = disc.effectiveCustomModelData
 
                 val optionsBuilder = optionsClass.getMethod("builder").invoke(null)
                 optionsClass.getMethod("customModelData", java.lang.Integer.TYPE).invoke(optionsBuilder, cmd)
@@ -70,5 +70,15 @@ object FabricGeyserHandler {
         } catch (e: Throwable) {
             PeyajCustomDiscFabric.logger.warn("Failed registering Geyser custom items: ${e.message}")
         }
+    }
+
+    fun isBedrockPlayer(uuid: java.util.UUID): Boolean {
+        try {
+            val geyserApiClass = Class.forName("org.geysermc.geyser.api.GeyserApi")
+            val api = geyserApiClass.getMethod("api").invoke(null)
+            val isBedrock = geyserApiClass.getMethod("isBedrockPlayer", java.util.UUID::class.java).invoke(api, uuid) as Boolean
+            if (isBedrock) return true
+        } catch (ignored: Exception) {}
+        return uuid.mostSignificantBits == 0L
     }
 }
