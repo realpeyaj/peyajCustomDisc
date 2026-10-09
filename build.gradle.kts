@@ -12,7 +12,9 @@ plugins {
 
 allprojects {
     group = "com.peyaj"
-    version = "2.5"
+    val baseVersion = "2.6"
+    val buildNumber = System.getenv("BUILD_NUMBER")
+    version = if (!buildNumber.isNullOrBlank()) "$baseVersion-b$buildNumber" else baseVersion
 
     repositories {
         mavenCentral()

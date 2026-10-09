@@ -17,6 +17,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v5
 
+      - name: Compute Build Version
+        id: build_ver
+        run: |
+          BASE_VER=$(grep "val baseVersion =" build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+          BASE_VER="${BASE_VER:-2.6}"
+          if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
+            TAG_VER="${{ github.ref_name }}"
+            VER="${TAG_VER#v}"
+            echo "BUILD_NUMBER=" >> $GITHUB_ENV
+            echo "APP_VERSION=$VER" >> $GITHUB_ENV
+          else
+            echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+            echo "APP_VERSION=${BASE_VER}-b${{ github.run_number }}" >> $GITHUB_ENV
+          fi
+
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
@@ -33,23 +48,26 @@ jobs:
         run: ./gradlew shadowJar --no-daemon --stacktrace
 
       - name: Upload Paper Jar Artifact
+        id: upload-paper
         uses: actions/upload-artifact@v4
         with:
-          name: peyajCustomDisc-Paper
+          name: peyajCustomDisc-Paper-${{ env.APP_VERSION }}
           path: paper/build/libs/peyajCustomDisc-Paper-*.jar
           if-no-files-found: error
 
       - name: Upload Fabric 1.21 Jar Artifact
+        id: upload-fabric-1-21
         uses: actions/upload-artifact@v4
         with:
-          name: peyajCustomDisc-Fabric-1.21
+          name: peyajCustomDisc-Fabric-1.21-${{ env.APP_VERSION }}
           path: fabric-1.21/build/libs/peyajCustomDisc-Fabric-1.21-*.jar
           if-no-files-found: error
 
       - name: Upload Fabric 26.3 Jar Artifact
+        id: upload-fabric-26
         uses: actions/upload-artifact@v4
         with:
-          name: peyajCustomDisc-Fabric-26
+          name: peyajCustomDisc-Fabric-26-${{ env.APP_VERSION }}
           path: fabric-26/build/libs/peyajCustomDisc-Fabric-26-*.jar
           if-no-files-found: error
 
@@ -57,6 +75,9 @@ jobs:
         if: success() && env.DISCORD_WEBHOOK != ''
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PAPER_URL: ${{ steps.upload-paper.outputs.artifact-url }}
+          FABRIC_1_21_URL: ${{ steps.upload-fabric-1-21.outputs.artifact-url }}
+          FABRIC_26_URL: ${{ steps.upload-fabric-26.outputs.artifact-url }}
         run: |
           COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1 | sed 's/"/\\"/g')
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -68,11 +89,16 @@ jobs:
             "avatar_url": "https://raw.githubusercontent.com/realpeyaj/peyajCustomDisc/main/peyajcustomdisc.png",
             "embeds": [
               {
-                "title": "Build Successful: ${{ github.repository }}",
+                "title": "Build Successful: ${{ github.repository }} ($APP_VERSION)",
                 "url": "$RUN_URL",
                 "color": 3066993,
                 "description": "Artifacts are ready for download.",
                 "fields": [
+                  {
+                    "name": "Version",
+                    "value": "\`$APP_VERSION\`",
+                    "inline": true
+                  },
                   {
                     "name": "Branch",
                     "value": "\`${{ github.ref_name }}\`",
@@ -90,12 +116,12 @@ jobs:
                   },
                   {
                     "name": "Built Jars",
-                    "value": "- peyajCustomDisc-Paper\n- peyajCustomDisc-Fabric-1.21\n- peyajCustomDisc-Fabric-26",
+                    "value": "- [peyajCustomDisc-Paper-$APP_VERSION]($PAPER_URL)\n- [peyajCustomDisc-Fabric-1.21-$APP_VERSION]($FABRIC_1_21_URL)\n- [peyajCustomDisc-Fabric-26-$APP_VERSION]($FABRIC_26_URL)",
                     "inline": false
                   }
                 ],
                 "footer": {
-                  "text": "Click the embed title to download the jar artifacts"
+                  "text": "Click the artifact links to download jars"
                 }
               }
             ]
@@ -120,7 +146,7 @@ jobs:
             "avatar_url": "https://raw.githubusercontent.com/realpeyaj/peyajCustomDisc/main/peyajcustomdisc.png",
             "embeds": [
               {
-                "title": "Build Failed: ${{ github.repository }}",
+                "title": "Build Failed: ${{ github.repository }} (${APP_VERSION:-2.6})",
                 "url": "$RUN_URL",
                 "color": 15158332,
                 "description": "Compilation or assembly failed.",
@@ -151,3 +177,4 @@ jobs:
           )
 
           curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$DISCORD_WEBHOOK"
+

@@ -38,7 +38,7 @@ class PackGenerator(
         
         if (!force && packMetaFile.exists() && zipFile.exists() && bedrockPackFile.exists()) {
             val existingMeta = try { mapper.readValue(packMetaFile, Map::class.java) } catch (e: Exception) { null }
-            if (existingMeta != null && existingMeta["discHash"] == currentDiscHash && existingMeta["generatorVersion"] == "2.5") {
+            if (existingMeta != null && existingMeta["discHash"] == currentDiscHash && existingMeta["generatorVersion"] == "2.6") {
                 logInfo("Discs haven't changed. Skipping pack generation to preserve hashes!")
                 return
             }
@@ -478,7 +478,7 @@ class PackGenerator(
             }.sorted().joinToString("|")
             mapper.writeValue(packMetaFile, mapOf(
                 "discHash" to currentDiscHash,
-                "generatorVersion" to "2.5"
+                "generatorVersion" to "2.6"
             ))
         } catch (e: Exception) {
             logWarning("Failed to save pack_meta.json: ${e.message}")
