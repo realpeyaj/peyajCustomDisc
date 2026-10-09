@@ -50,6 +50,9 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     // Tracks last region check timestamp per player to throttle spatial queries
     private val lastCheckTime = ConcurrentHashMap<UUID, Long>()
     
+    // Tracks pending trailing region checks for throttled movement
+    private val pendingChecks = ConcurrentHashMap.newKeySet<UUID>()
+    
     init {
         reload()
     }
@@ -199,6 +202,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         playerCurrentDisc.clear()
         playerMusicStartTime.clear()
         lastCheckTime.clear()
+        pendingChecks.clear()
     }
 
     private fun isBedrock(player: Player): Boolean {
@@ -221,7 +225,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             return false
         }
 
-        val sourceFile = if (mp3.exists()) mp3 else if (cleanMp3.exists()) cleanMp3 else if (ogg.exists()) ogg else if (cleanOgg.exists()) cleanOgg else null ?: return false
+        val sourceFile = listOf(mp3, cleanMp3, ogg, cleanOgg).firstOrNull { it.exists() } ?: return false
         val (success, _) = com.peyaj.jukeboxweb.util.AudioConverter.convertToOggStereo(sourceFile, cleanStereoOgg)
         return success
     }
@@ -263,7 +267,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
         val from = event.from
-        val to = event.to ?: return
+        val to = event.to
         
         if (from.blockX == to.blockX && from.blockY == to.blockY && from.blockZ == to.blockZ) {
             return // Same block, skip
@@ -273,6 +277,15 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         val now = System.currentTimeMillis()
         val last = lastCheckTime[event.player.uniqueId] ?: 0L
         if (now - last < 500L) {
+            if (pendingChecks.add(event.player.uniqueId)) {
+                plugin.server.scheduler.runTaskLater(plugin, Runnable {
+                    pendingChecks.remove(event.player.uniqueId)
+                    if (event.player.isOnline) {
+                        lastCheckTime[event.player.uniqueId] = System.currentTimeMillis()
+                        checkPlayerRegion(event.player)
+                    }
+                }, 10L)
+            }
             return
         }
         lastCheckTime[event.player.uniqueId] = now
@@ -324,8 +337,18 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         }
         playerMusicStartTime.remove(event.player.uniqueId)
         lastCheckTime.remove(event.player.uniqueId)
+        pendingChecks.remove(event.player.uniqueId)
     }
     
+    private fun getRegionVolume(region: com.sk89q.worldguard.protection.regions.ProtectedRegion): Long {
+        val min = region.minimumPoint
+        val max = region.maximumPoint
+        val dx = (max.blockX - min.blockX + 1L).coerceAtLeast(1L)
+        val dy = (max.blockY - min.blockY + 1L).coerceAtLeast(1L)
+        val dz = (max.blockZ - min.blockZ + 1L).coerceAtLeast(1L)
+        return dx * dy * dz
+    }
+
     private fun checkPlayerRegion(player: Player) {
         if (regionMusicMap.isEmpty()) return
         
@@ -335,23 +358,31 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             val loc = BukkitAdapter.adapt(player.location)
             val regions = query.getApplicableRegions(loc)
             
-            // Find the first region that has music configured (priority order)
-            var musicRegion: String? = null
-            var musicEntry: RegionMusic? = null
-            
-            for (region in regions.regions) {
-                val id = region.id.lowercase()
-                val entry = regionMusicMap[id]
-                if (entry != null) {
-                    musicRegion = id
-                    musicEntry = entry
-                    break
-                }
-            }
+            // Find the highest priority region that has music configured:
+            // 1) Highest WorldGuard priority number
+            // 2) Explicit child region (parent != null)
+            // 3) Smaller bounding volume (nested sub-regions win if priority & parent are tied)
+            val bestRegion = regions.regions
+                .filter { regionMusicMap.containsKey(it.id.lowercase()) }
+                .maxWithOrNull(
+                    compareBy<com.sk89q.worldguard.protection.regions.ProtectedRegion> { it.priority }
+                        .thenBy { it.parent != null }
+                        .thenByDescending { getRegionVolume(it) }
+                )
+
+            val musicRegion = bestRegion?.id?.lowercase()
+            val musicEntry = if (musicRegion != null) regionMusicMap[musicRegion] else null
             
             val currentRegion = playerCurrentRegion[player.uniqueId]
             
             if (musicRegion != currentRegion) {
+                // If adjacent/nested regions share the exact same disc, transfer region tracking smoothly without restarting audio
+                val currentPlayingDisc = playerCurrentDisc[player.uniqueId]
+                if (musicRegion != null && musicEntry != null && musicEntry.discId.isNotEmpty() && musicEntry.discId == currentPlayingDisc) {
+                    playerCurrentRegion[player.uniqueId] = musicRegion
+                    return
+                }
+
                 // Region changed!
                 if (currentRegion != null) {
                     // Stop previous music
