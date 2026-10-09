@@ -23,6 +23,7 @@ desktop.ini
 
 # Runtime artifacts
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.zip
 *.mcpack
 *.ogg

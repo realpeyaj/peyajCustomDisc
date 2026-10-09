@@ -64,7 +64,7 @@ jobs:
 
           PAYLOAD=$(cat <<EOF
           {
-            "username": "peyajCustomDisc CI",
+            "username": "peyajCustomDisc",
             "avatar_url": "https://raw.githubusercontent.com/realpeyaj/peyajCustomDisc/main/peyajcustomdisc.png",
             "embeds": [
               {
@@ -116,7 +116,7 @@ jobs:
 
           PAYLOAD=$(cat <<EOF
           {
-            "username": "peyajCustomDisc CI",
+            "username": "peyajCustomDisc",
             "avatar_url": "https://raw.githubusercontent.com/realpeyaj/peyajCustomDisc/main/peyajcustomdisc.png",
             "embeds": [
               {
