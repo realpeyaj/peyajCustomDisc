@@ -24,10 +24,17 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 data class RegionMusic(
-    val discId: String,
+    val discs: List<String>,
     val loop: Boolean = true,
-    val stereo: Boolean = true
-)
+    val stereo: Boolean = true,
+    val shuffle: Boolean = false
+) {
+    constructor(discId: String, loop: Boolean = true, stereo: Boolean = true, shuffle: Boolean = false) :
+            this(if (discId.isNotBlank()) listOf(discId) else emptyList(), loop, stereo, shuffle)
+
+    val discId: String
+        get() = discs.firstOrNull() ?: ""
+}
 
 // Manages region-based music playback using WorldGuard
 class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
@@ -40,6 +47,12 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
 
     // Tracks when music started playing for each player (for looping)
     private val playerMusicStartTime = ConcurrentHashMap<UUID, Long>()
+
+    // Tracks current playlist index for each player (for sequential playback)
+    private val playerPlaylistIndex = ConcurrentHashMap<UUID, Int>()
+
+    // Tracks recently played tracks in shuffle mode to avoid repeating until all tracks in the playlist are played
+    private val playerShuffleHistory = ConcurrentHashMap<UUID, MutableList<String>>()
     
     // Cache region -> RegionMusic mappings
     private var regionMusicMap: Map<String, RegionMusic> = emptyMap()
@@ -68,20 +81,31 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
                 val region = key.lowercase()
                 if (section.isConfigurationSection(key)) {
                     val sub = section.getConfigurationSection(key)
-                    val discId = sub?.getString("disc") ?: ""
+                    val discsList = if (sub?.isList("discs") == true) {
+                        sub.getStringList("discs").filter { it.isNotBlank() }
+                    } else {
+                        val single = sub?.getString("disc") ?: ""
+                        if (single.isNotBlank()) listOf(single) else emptyList()
+                    }
                     val loop = sub?.getBoolean("loop", true) ?: true
                     val stereo = sub?.getBoolean("stereo", true) ?: true
-                    if (discId.isNotBlank()) {
-                        newMap[region] = RegionMusic(discId, loop, stereo)
-                        if (stereo && ensureStereoFileExists(discId)) {
-                            needsPackRebuild = true
+                    val shuffle = sub?.getBoolean("shuffle", false) ?: false
+
+                    if (discsList.isNotEmpty()) {
+                        newMap[region] = RegionMusic(discsList, loop, stereo, shuffle)
+                        if (stereo) {
+                            for (dId in discsList) {
+                                if (ensureStereoFileExists(dId)) {
+                                    needsPackRebuild = true
+                                }
+                            }
                         }
                     }
                 } else {
-                    // Backwards-compatible flat string format: region_name: "disc_id" (defaults to loop: true, stereo: true)
+                    // Backwards-compatible flat string format: region_name: "disc_id" (defaults to loop: true, stereo: true, shuffle: false)
                     val discId = section.getString(key) ?: ""
                     if (discId.isNotBlank()) {
-                        newMap[region] = RegionMusic(discId, loop = true, stereo = true)
+                        newMap[region] = RegionMusic(listOf(discId), loop = true, stereo = true, shuffle = false)
                         if (ensureStereoFileExists(discId)) {
                             needsPackRebuild = true
                         }
@@ -116,10 +140,12 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
                 playerCurrentDisc.remove(uuid)
                 playerCurrentRegion.remove(uuid)
                 playerMusicStartTime.remove(uuid)
-            } else if (oldDiscId != null && oldDiscId != newEntry.discId) {
-                // Disc was changed! Stop old music and play new music
+                playerPlaylistIndex.remove(uuid)
+                playerShuffleHistory.remove(uuid)
+            } else if (oldDiscId != null && !newEntry.discs.contains(oldDiscId)) {
+                // Currently playing disc is no longer in this region's tracks! Stop old music and start new playlist
                 stopMusicForPlayer(player, oldDiscId)
-                playMusicForPlayer(player, newEntry, showActionBar = true)
+                playMusicForPlayer(player, newEntry, isNewRegion = true, showActionBar = true)
             }
         }
         
@@ -137,16 +163,20 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
     fun removeRegion(region: String) {
         val regionLower = region.lowercase()
         val entry = regionMusicMap[regionLower]
-        val configuredDiscId = entry?.discId ?: run {
+        val configuredDiscs = entry?.discs ?: run {
             val section = plugin.config.getConfigurationSection("region-music")
-            var found: String? = null
+            var found = listOf<String>()
             if (section != null) {
                 for (key in section.getKeys(false)) {
                     if (key.equals(regionLower, ignoreCase = true)) {
                         found = if (section.isConfigurationSection(key)) {
-                            section.getString("$key.disc")
+                            if (section.isList("$key.discs")) {
+                                section.getStringList("$key.discs")
+                            } else {
+                                listOfNotNull(section.getString("$key.disc"))
+                            }
                         } else {
-                            section.getString(key)
+                            listOfNotNull(section.getString(key))
                         }
                         break
                     }
@@ -158,17 +188,19 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         playerCurrentRegion.forEach { (uuid, r) ->
             if (r.equals(regionLower, ignoreCase = true)) {
                 val player = plugin.server.getPlayer(uuid)
-                val discIdToStop = playerCurrentDisc.remove(uuid) ?: configuredDiscId
+                val discIdToStop = playerCurrentDisc.remove(uuid) ?: configuredDiscs.firstOrNull()
                 if (player != null && discIdToStop != null) {
                     stopMusicForPlayer(player, discIdToStop)
                 }
                 playerCurrentRegion.remove(uuid)
                 playerMusicStartTime.remove(uuid)
+                playerPlaylistIndex.remove(uuid)
+                playerShuffleHistory.remove(uuid)
             }
         }
 
         // Also check any online players physically inside this WorldGuard region
-        if (configuredDiscId != null) {
+        if (configuredDiscs.isNotEmpty()) {
             try {
                 val regionContainer = WorldGuard.getInstance().platform.regionContainer
                 val query = regionContainer.createQuery()
@@ -176,10 +208,14 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
                     val loc = BukkitAdapter.adapt(player.location)
                     val regions = query.getApplicableRegions(loc)
                     if (regions.regions.any { it.id.equals(regionLower, ignoreCase = true) }) {
-                        val discIdToStop = playerCurrentDisc.remove(player.uniqueId) ?: configuredDiscId
-                        stopMusicForPlayer(player, discIdToStop)
+                        val discIdToStop = playerCurrentDisc.remove(player.uniqueId) ?: configuredDiscs.firstOrNull()
+                        if (discIdToStop != null) {
+                            stopMusicForPlayer(player, discIdToStop)
+                        }
                         playerCurrentRegion.remove(player.uniqueId)
                         playerMusicStartTime.remove(player.uniqueId)
+                        playerPlaylistIndex.remove(player.uniqueId)
+                        playerShuffleHistory.remove(player.uniqueId)
                     }
                 }
             } catch (ignored: Exception) {}
@@ -201,6 +237,8 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         playerCurrentRegion.clear()
         playerCurrentDisc.clear()
         playerMusicStartTime.clear()
+        playerPlaylistIndex.clear()
+        playerShuffleHistory.clear()
         lastCheckTime.clear()
         pendingChecks.clear()
     }
@@ -236,9 +274,10 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         playerCurrentRegion.forEach { (uuid, regionName) ->
             val player = plugin.server.getPlayer(uuid) ?: return@forEach
             val entry = regionMusicMap[regionName] ?: return@forEach
-            if (!entry.loop) return@forEach // Looping disabled for this region; play once only
+            if (entry.discs.size <= 1 && !entry.loop) return@forEach
 
-            val disc = plugin.discManager.getDisc(entry.discId) ?: return@forEach
+            val currentDiscId = playerCurrentDisc[uuid] ?: return@forEach
+            val disc = plugin.discManager.getDisc(currentDiscId) ?: return@forEach
             
             // Check if duration is set and has elapsed
             val duration = if (disc.durationSeconds > 0) {
@@ -258,8 +297,14 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             val elapsed = (now - startTime) / 1000
             
             if (elapsed >= duration) {
-                // Replay the music
-                playMusicForPlayer(player, entry, showActionBar = false)
+                if (entry.discs.size <= 1) {
+                    // Single track with loop=true: replay same disc without action bar
+                    playDiscForPlayer(player, entry.discId, entry.stereo, showActionBar = false)
+                } else {
+                    // Playlist mode: stop previous track and advance to next track with action bar
+                    stopMusicForPlayer(player, currentDiscId)
+                    playMusicForPlayer(player, entry, isNewRegion = false, showActionBar = true)
+                }
             }
         }
     }
@@ -322,6 +367,8 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
                     // Reset current region tracking to force music playback now that pack sounds are active
                     playerCurrentRegion.remove(event.player.uniqueId)
                     playerMusicStartTime.remove(event.player.uniqueId)
+                    playerPlaylistIndex.remove(event.player.uniqueId)
+                    playerShuffleHistory.remove(event.player.uniqueId)
                     checkPlayerRegion(event.player)
                 }
             }, 5L)
@@ -336,6 +383,8 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             stopMusicForPlayer(event.player, discId)
         }
         playerMusicStartTime.remove(event.player.uniqueId)
+        playerPlaylistIndex.remove(event.player.uniqueId)
+        playerShuffleHistory.remove(event.player.uniqueId)
         lastCheckTime.remove(event.player.uniqueId)
         pendingChecks.remove(event.player.uniqueId)
     }
@@ -378,7 +427,7 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             if (musicRegion != currentRegion) {
                 // If adjacent/nested regions share the exact same disc, transfer region tracking smoothly without restarting audio
                 val currentPlayingDisc = playerCurrentDisc[player.uniqueId]
-                if (musicRegion != null && musicEntry != null && musicEntry.discId.isNotEmpty() && musicEntry.discId == currentPlayingDisc) {
+                if (musicRegion != null && musicEntry != null && currentPlayingDisc != null && musicEntry.discs.contains(currentPlayingDisc)) {
                     playerCurrentRegion[player.uniqueId] = musicRegion
                     return
                 }
@@ -391,16 +440,20 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
                         stopMusicForPlayer(player, prevDiscId)
                     }
                     playerMusicStartTime.remove(player.uniqueId)
+                    playerPlaylistIndex.remove(player.uniqueId)
+                    playerShuffleHistory.remove(player.uniqueId)
                 }
                 
-                if (musicRegion != null && musicEntry != null && musicEntry.discId.isNotEmpty()) {
+                if (musicRegion != null && musicEntry != null && musicEntry.discs.isNotEmpty()) {
                     // Start new music
-                    playMusicForPlayer(player, musicEntry, showActionBar = true)
+                    playMusicForPlayer(player, musicEntry, isNewRegion = true, showActionBar = true)
                     playerCurrentRegion[player.uniqueId] = musicRegion
                 } else {
                     // Left all music regions
                     playerCurrentRegion.remove(player.uniqueId)
                     playerMusicStartTime.remove(player.uniqueId)
+                    playerPlaylistIndex.remove(player.uniqueId)
+                    playerShuffleHistory.remove(player.uniqueId)
                     val remainingDisc = playerCurrentDisc.remove(player.uniqueId)
                     if (remainingDisc != null) {
                         stopMusicForPlayer(player, remainingDisc)
@@ -412,18 +465,79 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             // WorldGuard not available or error - silently ignore
         }
     }
-    
-    private fun playMusicForPlayer(player: Player, entry: RegionMusic, showActionBar: Boolean = true) {
-        val disc = plugin.discManager.getDisc(entry.discId)
+
+    private fun getNextDisc(player: Player, entry: RegionMusic, isNewRegion: Boolean): String? {
+        if (entry.discs.isEmpty()) return null
+        if (entry.discs.size == 1) return entry.discs[0]
+
+        val uuid = player.uniqueId
+
+        if (entry.shuffle) {
+            val history = playerShuffleHistory.computeIfAbsent(uuid) { Collections.synchronizedList(mutableListOf()) }
+            var unplayed = entry.discs.filter { it !in history }
+            if (unplayed.isEmpty()) {
+                if (!entry.loop && !isNewRegion) {
+                    return null
+                }
+                history.clear()
+                val lastPlayed = playerCurrentDisc[uuid]
+                val candidates = if (lastPlayed != null && entry.discs.size > 1) {
+                    entry.discs.filter { it != lastPlayed }
+                } else {
+                    entry.discs
+                }
+                val picked = candidates.random()
+                history.add(picked)
+                return picked
+            }
+
+            val picked = unplayed.random()
+            history.add(picked)
+            return picked
+        } else {
+            val currentIndex = if (isNewRegion) {
+                0
+            } else {
+                val next = (playerPlaylistIndex[uuid] ?: -1) + 1
+                if (next >= entry.discs.size) {
+                    if (!entry.loop) {
+                        return null
+                    }
+                    0
+                } else {
+                    next
+                }
+            }
+            playerPlaylistIndex[uuid] = currentIndex
+            return entry.discs[currentIndex]
+        }
+    }
+
+    private fun playMusicForPlayer(player: Player, entry: RegionMusic, isNewRegion: Boolean = true, showActionBar: Boolean = true) {
+        val nextDiscId = getNextDisc(player, entry, isNewRegion)
+        if (nextDiscId == null) {
+            val currentDisc = playerCurrentDisc.remove(player.uniqueId)
+            if (currentDisc != null) {
+                stopMusicForPlayer(player, currentDisc)
+            }
+            playerMusicStartTime.remove(player.uniqueId)
+            return
+        }
+
+        playDiscForPlayer(player, nextDiscId, entry.stereo, showActionBar)
+    }
+
+    private fun playDiscForPlayer(player: Player, discId: String, stereo: Boolean, showActionBar: Boolean = true) {
+        val disc = plugin.discManager.getDisc(discId)
         if (disc == null) {
-            plugin.logger.warning("Region music disc '${entry.discId}' not found!")
+            plugin.logger.warning("Region music disc '$discId' not found!")
             return
         }
         
         val discCleanId = disc.cleanId
         val stereoFile = File(plugin.dataFolder, "discs/${discCleanId}_stereo.ogg")
-        val altStereoFile = File(plugin.dataFolder, "discs/${entry.discId}_stereo.ogg")
-        val hasStereo = entry.stereo && (stereoFile.exists() || altStereoFile.exists())
+        val altStereoFile = File(plugin.dataFolder, "discs/${discId}_stereo.ogg")
+        val hasStereo = stereo && (stereoFile.exists() || altStereoFile.exists())
 
         val soundKeyName = if (hasStereo) "peyajcustomdisc:disc.${discCleanId}_stereo" else "peyajcustomdisc:disc.$discCleanId"
 
@@ -432,9 +546,6 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
             player.playSound(player.location, soundKeyName, SoundCategory.RECORDS, 1.0f, 1.0f)
         } else {
             // Use player coordinates for both stereo and mono.
-            // In OpenAL, 2-channel stereo audio is non-spatial by specification (plays in both ears without panning).
-            // Mono audio will properly spatialize at the player's position.
-            // Using player coordinates sends ClientboundSoundPacket, which avoids entity-emitter packet drops on Java clients.
             player.playSound(
                 Sound.sound(Key.key(soundKeyName), Sound.Source.RECORD, 1.0f, 1.0f),
                 player.location.x, player.location.y, player.location.z
@@ -442,10 +553,10 @@ class RegionMusicManager(private val plugin: PeyajCustomDisc) : Listener {
         }
         
         // Track playing disc and start time for looping
-        playerCurrentDisc[player.uniqueId] = entry.discId
+        playerCurrentDisc[player.uniqueId] = discId
         playerMusicStartTime[player.uniqueId] = System.currentTimeMillis()
         
-        // Show action bar (only on first play, not on loops)
+        // Show action bar
         if (showActionBar) {
             val msg = Component.text("♫ Now Playing: ", NamedTextColor.GOLD)
                 .append(Component.text(disc.name, NamedTextColor.AQUA))

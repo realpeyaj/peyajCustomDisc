@@ -147,7 +147,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
         // --- REGION MUSIC COMMAND ---
         if (args[0].equals("region", ignoreCase = true)) {
             if (args.size < 2) {
-                sender.sendMessage(Component.text("Usage: /disc region <set|add|loop|stereo|remove|list>", NamedTextColor.RED))
+                sender.sendMessage(Component.text("Usage: /disc region <set|add|loop|stereo|shuffle|remove|list>", NamedTextColor.RED))
                 return true
             }
             
@@ -206,11 +206,44 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     sender.sendMessage(Component.text("Disc '$discId' not found.", NamedTextColor.RED))
                     return true
                 }
+
+                val existingSection = plugin.config.getConfigurationSection("region-music.$regionName")
+                val isAdd = sub == "add" && existingSection != null
                 
-                // Save to config (structured format)
-                plugin.config.set("region-music.$regionName.disc", discId)
-                plugin.config.set("region-music.$regionName.loop", loop)
-                plugin.config.set("region-music.$regionName.stereo", stereo)
+                val currentDiscsList: MutableList<String> = if (isAdd) {
+                    if (existingSection!!.isList("discs")) {
+                        existingSection.getStringList("discs").toMutableList()
+                    } else {
+                        val single = existingSection.getString("disc") ?: ""
+                        if (single.isNotBlank()) mutableListOf(single) else mutableListOf()
+                    }
+                } else {
+                    mutableListOf()
+                }
+
+                if (isAdd) {
+                    if (!currentDiscsList.contains(discId)) {
+                        currentDiscsList.add(discId)
+                    }
+                    plugin.config.set("region-music.$regionName.disc", null)
+                    plugin.config.set("region-music.$regionName.discs", currentDiscsList)
+                    if (args.size <= 4) {
+                        loop = existingSection!!.getBoolean("loop", loop)
+                    }
+                    if (args.size <= 5) {
+                        stereo = existingSection!!.getBoolean("stereo", stereo)
+                    }
+                    val shuffle = existingSection!!.getBoolean("shuffle", false)
+                    plugin.config.set("region-music.$regionName.loop", loop)
+                    plugin.config.set("region-music.$regionName.stereo", stereo)
+                    plugin.config.set("region-music.$regionName.shuffle", shuffle)
+                } else {
+                    // "set" replaces playlist with single disc
+                    plugin.config.set("region-music.$regionName.discs", null)
+                    plugin.config.set("region-music.$regionName.disc", discId)
+                    plugin.config.set("region-music.$regionName.loop", loop)
+                    plugin.config.set("region-music.$regionName.stereo", stereo)
+                }
                 plugin.saveConfig()
                 
                 var needsPackRebuild = false
@@ -234,7 +267,12 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 
                 val loopStatus = if (loop) "ON (Repeating)" else "OFF (Plays Once)"
                 val stereoStatus = if (stereo) "ON (Stereo)" else "OFF (Mono)"
-                sender.sendMessage(Component.text("✔ Region '$regionName' now plays disc '$discId' [Loop: $loopStatus] [Stereo: $stereoStatus].", NamedTextColor.GREEN))
+                if (isAdd) {
+                    val count = currentDiscsList.size
+                    sender.sendMessage(Component.text("✔ Added '$discId' to region '$regionName' playlist ($count tracks total) [Loop: $loopStatus] [Stereo: $stereoStatus].", NamedTextColor.GREEN))
+                } else {
+                    sender.sendMessage(Component.text("✔ Region '$regionName' now plays disc '$discId' [Loop: $loopStatus] [Stereo: $stereoStatus].", NamedTextColor.GREEN))
+                }
                 return true
             }
 
@@ -250,6 +288,8 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     return true
                 }
 
+                val isDiscsList = section.isConfigurationSection(regionName) && section.isList("$regionName.discs")
+                val currentDiscs = if (isDiscsList) section.getStringList("$regionName.discs") else null
                 val currentDiscId = if (section.isConfigurationSection(regionName)) {
                     section.getString("$regionName.disc") ?: ""
                 } else {
@@ -268,16 +308,30 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     true
                 }
 
+                val currentShuffle = if (section.isConfigurationSection(regionName)) {
+                    section.getBoolean("$regionName.shuffle", false)
+                } else {
+                    false
+                }
+
                 val newLoop = if (args.size >= 4) {
                     val param = args[3].lowercase()
                     if (param == "toggle") !currentLoop else parseLoopValue(param)
                 } else {
-                    !currentLoop // Default to toggle if no extra argument given
+                    !currentLoop
                 }
 
-                plugin.config.set("region-music.$regionName.disc", currentDiscId)
+                if (currentDiscs != null) {
+                    plugin.config.set("region-music.$regionName.discs", currentDiscs)
+                    plugin.config.set("region-music.$regionName.disc", null)
+                } else {
+                    plugin.config.set("region-music.$regionName.disc", currentDiscId)
+                }
                 plugin.config.set("region-music.$regionName.loop", newLoop)
                 plugin.config.set("region-music.$regionName.stereo", currentStereo)
+                if (currentShuffle) {
+                    plugin.config.set("region-music.$regionName.shuffle", true)
+                }
                 plugin.saveConfig()
 
                 plugin.regionMusicManager?.reload()
@@ -299,6 +353,8 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     return true
                 }
 
+                val isDiscsList = section.isConfigurationSection(regionName) && section.isList("$regionName.discs")
+                val currentDiscs = if (isDiscsList) section.getStringList("$regionName.discs") else null
                 val currentDiscId = if (section.isConfigurationSection(regionName)) {
                     section.getString("$regionName.disc") ?: ""
                 } else {
@@ -317,6 +373,12 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     true
                 }
 
+                val currentShuffle = if (section.isConfigurationSection(regionName)) {
+                    section.getBoolean("$regionName.shuffle", false)
+                } else {
+                    false
+                }
+
                 val newStereo = if (args.size >= 4) {
                     val param = args[3].lowercase()
                     if (param == "toggle") !currentStereo else parseBooleanValue(param)
@@ -324,15 +386,26 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                     !currentStereo
                 }
 
-                plugin.config.set("region-music.$regionName.disc", currentDiscId)
+                if (currentDiscs != null) {
+                    plugin.config.set("region-music.$regionName.discs", currentDiscs)
+                    plugin.config.set("region-music.$regionName.disc", null)
+                } else {
+                    plugin.config.set("region-music.$regionName.disc", currentDiscId)
+                }
                 plugin.config.set("region-music.$regionName.loop", currentLoop)
                 plugin.config.set("region-music.$regionName.stereo", newStereo)
+                if (currentShuffle) {
+                    plugin.config.set("region-music.$regionName.shuffle", true)
+                }
                 plugin.saveConfig()
 
                 var needsPackRebuild = false
-                if (newStereo && currentDiscId.isNotBlank()) {
-                    if (plugin.regionMusicManager?.ensureStereoFileExists(currentDiscId) == true) {
-                        needsPackRebuild = true
+                if (newStereo) {
+                    val discsToCheck = currentDiscs ?: listOfNotNull(currentDiscId.takeIf { it.isNotBlank() })
+                    for (dId in discsToCheck) {
+                        if (plugin.regionMusicManager?.ensureStereoFileExists(dId) == true) {
+                            needsPackRebuild = true
+                        }
                     }
                 }
 
@@ -351,19 +424,106 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 sender.sendMessage(Component.text("✔ Stereo for region '$regionName' set to $stateStr.", NamedTextColor.GREEN))
                 return true
             }
-            
-            if (sub == "remove" || sub == "delete") {
+
+            if (sub == "shuffle") {
                 if (args.size < 3) {
-                    sender.sendMessage(Component.text("Usage: /disc region remove <region_name>", NamedTextColor.RED))
+                    sender.sendMessage(Component.text("Usage: /disc region shuffle <region_name> [on|off|toggle]", NamedTextColor.RED))
                     return true
                 }
                 val regionName = args[2].lowercase()
-                
+                val section = plugin.config.getConfigurationSection("region-music")
+                if (section == null || !section.contains(regionName)) {
+                    sender.sendMessage(Component.text("No region music configured for '$regionName'.", NamedTextColor.RED))
+                    return true
+                }
+
+                val currentShuffle = if (section.isConfigurationSection(regionName)) {
+                    section.getBoolean("$regionName.shuffle", false)
+                } else {
+                    false
+                }
+
+                val newShuffle = if (args.size >= 4) {
+                    val param = args[3].lowercase()
+                    if (param == "toggle") !currentShuffle else parseBooleanValue(param)
+                } else {
+                    !currentShuffle
+                }
+
+                val isDiscsList = section.isConfigurationSection(regionName) && section.isList("$regionName.discs")
+                val currentDiscs = if (isDiscsList) section.getStringList("$regionName.discs") else null
+                val currentDiscId = if (section.isConfigurationSection(regionName)) {
+                    section.getString("$regionName.disc") ?: ""
+                } else {
+                    section.getString(regionName) ?: ""
+                }
+                val currentLoop = if (section.isConfigurationSection(regionName)) {
+                    section.getBoolean("$regionName.loop", true)
+                } else {
+                    true
+                }
+                val currentStereo = if (section.isConfigurationSection(regionName)) {
+                    section.getBoolean("$regionName.stereo", true)
+                } else {
+                    true
+                }
+
+                if (currentDiscs != null) {
+                    plugin.config.set("region-music.$regionName.discs", currentDiscs)
+                    plugin.config.set("region-music.$regionName.disc", null)
+                } else {
+                    plugin.config.set("region-music.$regionName.disc", currentDiscId)
+                }
+                plugin.config.set("region-music.$regionName.loop", currentLoop)
+                plugin.config.set("region-music.$regionName.stereo", currentStereo)
+                plugin.config.set("region-music.$regionName.shuffle", newShuffle)
+                plugin.saveConfig()
+
+                plugin.regionMusicManager?.reload()
+
+                val stateStr = if (newShuffle) "ON (Randomized Playback)" else "OFF (Sequential Playback)"
+                sender.sendMessage(Component.text("✔ Shuffle for region '$regionName' set to $stateStr.", NamedTextColor.GREEN))
+                return true
+            }
+            
+            if (sub == "remove" || sub == "delete") {
+                if (args.size < 3) {
+                    sender.sendMessage(Component.text("Usage: /disc region remove <region_name> [disc_id]", NamedTextColor.RED))
+                    return true
+                }
+                val regionName = args[2].lowercase()
+                val targetDiscId = if (args.size >= 4) args[3].lowercase() else null
+
+                val section = plugin.config.getConfigurationSection("region-music")
+                val regionSection = section?.getConfigurationSection(regionName)
+
+                if (targetDiscId != null && regionSection != null && regionSection.isList("discs")) {
+                    val currentDiscs = regionSection.getStringList("discs").toMutableList()
+                    val removed = currentDiscs.removeIf { it.equals(targetDiscId, ignoreCase = true) }
+                    if (!removed) {
+                        sender.sendMessage(Component.text("Disc '$targetDiscId' was not found in region '$regionName' playlist.", NamedTextColor.RED))
+                        return true
+                    }
+                    if (currentDiscs.isEmpty()) {
+                        plugin.regionMusicManager?.removeRegion(regionName)
+                        section.set(regionName, null)
+                        plugin.config.set("region-music.$regionName", null)
+                        plugin.saveConfig()
+                        plugin.regionMusicManager?.reload()
+                        sender.sendMessage(Component.text("✔ Removed '$targetDiscId' from '$regionName'. Playlist is now empty, region music removed.", NamedTextColor.YELLOW))
+                    } else {
+                        plugin.config.set("region-music.$regionName.discs", currentDiscs)
+                        plugin.saveConfig()
+                        plugin.regionMusicManager?.reload()
+                        sender.sendMessage(Component.text("✔ Removed '$targetDiscId' from region '$regionName' (${currentDiscs.size} tracks remaining).", NamedTextColor.YELLOW))
+                    }
+                    return true
+                }
+
                 // Stop music for any players currently inside or tracked in this region
                 plugin.regionMusicManager?.removeRegion(regionName)
 
                 // Clean up config case-insensitively
-                val section = plugin.config.getConfigurationSection("region-music")
                 if (section != null) {
                     for (key in section.getKeys(false)) {
                         if (key.equals(regionName, ignoreCase = true)) {
@@ -389,36 +549,43 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 
                 sender.sendMessage(Component.text("Region Music Mappings", NamedTextColor.AQUA))
                 section.getKeys(false).forEach { region ->
-                    val discId = if (section.isConfigurationSection(region)) {
+                    val isConfigSection = section.isConfigurationSection(region)
+                    val isDiscsList = isConfigSection && section.isList("$region.discs")
+
+                    val discDisplay = if (isDiscsList) {
+                        val list = section.getStringList("$region.discs")
+                        "${list.size} tracks (${list.joinToString(", ")})"
+                    } else if (isConfigSection) {
                         section.getString("$region.disc") ?: "?"
                     } else {
                         section.getString(region) ?: "?"
                     }
-                    val isLoop = if (section.isConfigurationSection(region)) {
-                        section.getBoolean("$region.loop", true)
-                    } else {
-                        true
-                    }
-                    val isStereo = if (section.isConfigurationSection(region)) {
-                        section.getBoolean("$region.stereo", true)
-                    } else {
-                        true
-                    }
+
+                    val isLoop = if (isConfigSection) section.getBoolean("$region.loop", true) else true
+                    val isStereo = if (isConfigSection) section.getBoolean("$region.stereo", true) else true
+                    val isShuffle = if (isConfigSection) section.getBoolean("$region.shuffle", false) else false
+
                     val loopColor = if (isLoop) NamedTextColor.GREEN else NamedTextColor.DARK_GRAY
                     val loopLabel = if (isLoop) "ON" else "OFF"
                     val stereoColor = if (isStereo) NamedTextColor.AQUA else NamedTextColor.DARK_GRAY
                     val stereoLabel = if (isStereo) "ON" else "OFF"
+                    val shuffleColor = if (isShuffle) NamedTextColor.LIGHT_PURPLE else NamedTextColor.DARK_GRAY
+                    val shuffleLabel = if (isShuffle) "ON" else "OFF"
 
-                    sender.sendMessage(
-                        Component.text("  $region → $discId ", NamedTextColor.YELLOW)
-                            .append(Component.text("[Loop: $loopLabel] ", loopColor))
-                            .append(Component.text("[Stereo: $stereoLabel]", stereoColor))
-                    )
+                    val msg = Component.text("  $region → $discDisplay ", NamedTextColor.YELLOW)
+                        .append(Component.text("[Loop: $loopLabel] ", loopColor))
+                        .append(Component.text("[Stereo: $stereoLabel] ", stereoColor))
+
+                    if (isDiscsList) {
+                        msg.append(Component.text("[Shuffle: $shuffleLabel]", shuffleColor))
+                    }
+
+                    sender.sendMessage(msg)
                 }
                 return true
             }
             
-            sender.sendMessage(Component.text("Unknown subcommand. Use: set, add, loop, stereo, remove, list", NamedTextColor.RED))
+            sender.sendMessage(Component.text("Unknown subcommand. Use: set, add, loop, stereo, shuffle, remove, list", NamedTextColor.RED))
             return true
         }
 
@@ -622,7 +789,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
         // Region tab completion
         if (args[0].equals("region", ignoreCase = true)) {
             if (args.size == 2) {
-                return listOf("set", "add", "loop", "stereo", "remove", "list").filter { it.startsWith(args[1], true) }
+                return listOf("set", "add", "loop", "stereo", "shuffle", "remove", "list").filter { it.startsWith(args[1], true) }
             }
             if (args.size == 3 && (args[1].equals("set", ignoreCase = true) || args[1].equals("add", ignoreCase = true))) {
                 // Suggest WorldGuard regions from player's current world
@@ -631,7 +798,7 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 }
                 return emptyList()
             }
-            if (args.size == 3 && (args[1].equals("remove", ignoreCase = true) || args[1].equals("delete", ignoreCase = true) || args[1].equals("loop", ignoreCase = true) || args[1].equals("stereo", ignoreCase = true))) {
+            if (args.size == 3 && (args[1].equals("remove", ignoreCase = true) || args[1].equals("delete", ignoreCase = true) || args[1].equals("loop", ignoreCase = true) || args[1].equals("stereo", ignoreCase = true) || args[1].equals("shuffle", ignoreCase = true))) {
                 // Suggest existing region mappings
                 val section = plugin.config.getConfigurationSection("region-music")
                 return section?.getKeys(false)?.filter { it.startsWith(args[2], true) }?.toList() ?: emptyList()
@@ -644,7 +811,15 @@ class JukeboxCommand(private val plugin: PeyajCustomDisc) : CommandExecutor, Tab
                 }
                 return suggestions.filter { it.startsWith(args[3], true) }
             }
-            if (args.size == 4 && (args[1].equals("loop", ignoreCase = true) || args[1].equals("stereo", ignoreCase = true))) {
+            if (args.size == 4 && (args[1].equals("remove", ignoreCase = true) || args[1].equals("delete", ignoreCase = true))) {
+                val regionName = args[2].lowercase()
+                val section = plugin.config.getConfigurationSection("region-music.$regionName")
+                if (section != null && section.isList("discs")) {
+                    return section.getStringList("discs").filter { it.startsWith(args[3], true) }
+                }
+                return emptyList()
+            }
+            if (args.size == 4 && (args[1].equals("loop", ignoreCase = true) || args[1].equals("stereo", ignoreCase = true) || args[1].equals("shuffle", ignoreCase = true))) {
                 return listOf("on", "off", "toggle", "true", "false").filter { it.startsWith(args[3], true) }
             }
             if (args.size == 5 && (args[1].equals("set", ignoreCase = true) || args[1].equals("add", ignoreCase = true))) {

@@ -51,31 +51,32 @@ check-updates: true
 # ========================================
 # WorldGuard Region Music (Optional)
 # ========================================
-# Map WorldGuard regions to custom disc IDs.
-# When a player enters a region, the mapped disc will automatically play.
+# Map WorldGuard regions to custom disc IDs or playlists.
+# When a player enters a region, the mapped music will automatically play.
 # When they leave, the music stops.
 # 
-# Format:
+# Formats supported:
+#
+# 1) Single track:
 #   region-music:
-#     region_name:
-#       disc: "disc_id"
+#     lobby:
+#       disc: "background_ambient"
 #       loop: true    # true/on = repeat continuously; false/off = play once on entry
 #       stereo: true  # true/on (Default) = rich 2-channel background audio; false/off = mono 3D spatial audio
 #
-# Legacy flat string format is also supported (defaults to loop: true, stereo: true):
-#   region-music:
-#     region_name: "disc_id"
-#
-# Example:
+# 2) Playlist with shuffle or sequential playback:
 #   region-music:
 #     spawn:
-#       disc: "background_ambient"
-#       loop: true
+#       discs:
+#         - "ambient_melody"
+#         - "town_theme"
+#         - "acoustic_vibes"
+#       shuffle: true # true/on = randomized order; false/off (Default) = sequential order
+#       loop: true    # true/on = loop playlist when finished; false/off = play playlist once
 #       stereo: true
-#     boss_arena:
-#       disc: "battle_theme"
-#       loop: false
-#       stereo: true
+#
+# 3) Legacy flat string format (defaults to loop: true, stereo: true):
+#   region-music:
 #     lobby: "chill_vibes"
 #
 # Note: Region names are case-insensitive (converted to lowercase).
@@ -83,7 +84,10 @@ check-updates: true
 
 region-music:
   # example_region:
-  #   disc: "example_disc_id"
+  #   discs:
+  #     - "example_disc_1"
+  #     - "example_disc_2"
+  #   shuffle: true
   #   loop: true
   #   stereo: true
 
