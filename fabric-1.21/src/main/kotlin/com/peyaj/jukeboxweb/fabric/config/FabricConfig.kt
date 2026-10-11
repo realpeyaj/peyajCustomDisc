@@ -17,7 +17,9 @@ data class FabricConfig(
     var required: Boolean = false
 ) {
     companion object {
-        private val mapper = jacksonObjectMapper()
+        private val mapper = jacksonObjectMapper().apply {
+            configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        }
 
         fun load(configFile: File): FabricConfig {
             if (!configFile.exists()) {
@@ -27,7 +29,9 @@ data class FabricConfig(
                 return defaultConfig
             }
             return try {
-                mapper.readValue<FabricConfig>(configFile)
+                val loaded = mapper.readValue<FabricConfig>(configFile)
+                save(configFile, loaded)
+                loaded
             } catch (e: Exception) {
                 FabricConfig()
             }

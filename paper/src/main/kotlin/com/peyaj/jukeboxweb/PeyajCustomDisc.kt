@@ -37,6 +37,7 @@ class PeyajCustomDisc : JavaPlugin() {
         
         // Save default config & auto-migrate new keys from newer plugin versions
         saveDefaultConfig()
+        config.options().copyDefaults(true)
         updateConfig()
         
         // Check public-url warning
@@ -133,33 +134,10 @@ class PeyajCustomDisc : JavaPlugin() {
     private fun updateConfig() {
         try {
             val configFile = java.io.File(dataFolder, "config.yml")
-            if (!configFile.exists()) return
-
-            val content = configFile.readText(java.nio.charset.StandardCharsets.UTF_8)
-            val additions = StringBuilder()
-
-            if (!content.contains("check-updates:")) {
-                additions.append("\n# Should the plugin check for new releases on Modrinth and notify OPs upon login?\ncheck-updates: true\n")
-            }
-
-            if (additions.isNotEmpty()) {
-                configFile.appendText(additions.toString(), java.nio.charset.StandardCharsets.UTF_8)
+            val templateStream = getResource("config.yml") ?: return
+            val updated = com.peyaj.jukeboxweb.config.ConfigMigrator.updateConfigFile(configFile, templateStream, logger)
+            if (updated) {
                 reloadConfig()
-                logger.info("✔ Automatically updated config.yml with new settings from this version.")
-            }
-
-            // Auto-migrate auto-eject option if missing from existing config
-            val refreshedContent = configFile.readText(java.nio.charset.StandardCharsets.UTF_8)
-            if (!refreshedContent.contains("auto-eject:")) {
-                if (refreshedContent.contains("particle-type:")) {
-                    val migrated = refreshedContent.replace(
-                        Regex("(particle-type:.*)", RegexOption.MULTILINE),
-                        "$1\n  # Whether jukeboxes automatically eject the disc onto the block when the track ends (if not looping)\n  auto-eject: true"
-                    )
-                    configFile.writeText(migrated, java.nio.charset.StandardCharsets.UTF_8)
-                    reloadConfig()
-                    logger.info("✔ Automatically updated config.yml with auto-eject setting.")
-                }
             }
         } catch (e: Exception) {
             logger.warning("Could not auto-migrate config.yml: ${e.message}")

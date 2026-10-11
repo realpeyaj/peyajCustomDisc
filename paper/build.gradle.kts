@@ -11,6 +11,12 @@ dependencies {
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0")
 
     implementation("org.bstats:bstats-bukkit:3.0.2")
+
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 configurations.all {
