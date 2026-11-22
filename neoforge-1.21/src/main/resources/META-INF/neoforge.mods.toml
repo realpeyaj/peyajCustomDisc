@@ -1,0 +1,28 @@
+modLoader = "kotlinforforge"
+loaderVersion = "[5,)"
+license = "GPL-3.0-only"
+
+[[mods]]
+modId = "peyajcustomdisc"
+version = "${version}"
+displayName = "peyajCustomDisc"
+displayURL = "https://github.com/realpeyaj/peyajCustomDisc"
+logoFile = "icon.png"
+authors = "peyaj"
+description = '''
+Custom music disc creator & manager with web dashboard, dynamic resource packs, and Geyser support.
+'''
+
+[[dependencies.peyajcustomdisc]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.peyajcustomdisc]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
+ordering = "NONE"
+side = "BOTH"

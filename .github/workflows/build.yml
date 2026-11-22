@@ -21,7 +21,7 @@ jobs:
         id: build_ver
         run: |
           BASE_VER=$(grep "val baseVersion =" build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
-          BASE_VER="${BASE_VER:-2.6}"
+          BASE_VER="${BASE_VER:-2.7}"
           if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
             TAG_VER="${{ github.ref_name }}"
             VER="${TAG_VER#v}"
@@ -71,6 +71,22 @@ jobs:
           path: fabric-26/build/libs/peyajCustomDisc-Fabric-26-*.jar
           if-no-files-found: error
 
+      - name: Upload NeoForge 1.21 Jar Artifact
+        id: upload-neoforge-1-21
+        uses: actions/upload-artifact@v4
+        with:
+          name: peyajCustomDisc-NeoForge-1.21-${{ env.APP_VERSION }}
+          path: neoforge-1.21/build/libs/peyajCustomDisc-NeoForge-1.21-*.jar
+          if-no-files-found: error
+
+      - name: Upload NeoForge 26.3 Jar Artifact
+        id: upload-neoforge-26
+        uses: actions/upload-artifact@v4
+        with:
+          name: peyajCustomDisc-NeoForge-26-${{ env.APP_VERSION }}
+          path: neoforge-26/build/libs/peyajCustomDisc-NeoForge-26-*.jar
+          if-no-files-found: error
+
       - name: Notify Discord on Success
         if: success() && env.DISCORD_WEBHOOK != ''
         env:
@@ -78,6 +94,8 @@ jobs:
           PAPER_URL: ${{ steps.upload-paper.outputs.artifact-url }}
           FABRIC_1_21_URL: ${{ steps.upload-fabric-1-21.outputs.artifact-url }}
           FABRIC_26_URL: ${{ steps.upload-fabric-26.outputs.artifact-url }}
+          NEOFORGE_1_21_URL: ${{ steps.upload-neoforge-1-21.outputs.artifact-url }}
+          NEOFORGE_26_URL: ${{ steps.upload-neoforge-26.outputs.artifact-url }}
         run: |
           COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1 | sed 's/"/\\"/g')
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -116,7 +134,7 @@ jobs:
                   },
                   {
                     "name": "Built Jars",
-                    "value": "- [peyajCustomDisc-Paper-$APP_VERSION]($PAPER_URL)\n- [peyajCustomDisc-Fabric-1.21-$APP_VERSION]($FABRIC_1_21_URL)\n- [peyajCustomDisc-Fabric-26-$APP_VERSION]($FABRIC_26_URL)",
+                    "value": "- [peyajCustomDisc-Paper-$APP_VERSION]($PAPER_URL)\n- [peyajCustomDisc-Fabric-1.21-$APP_VERSION]($FABRIC_1_21_URL)\n- [peyajCustomDisc-Fabric-26-$APP_VERSION]($FABRIC_26_URL)\n- [peyajCustomDisc-NeoForge-1.21-$APP_VERSION]($NEOFORGE_1_21_URL)\n- [peyajCustomDisc-NeoForge-26-$APP_VERSION]($NEOFORGE_26_URL)",
                     "inline": false
                   }
                 ],
@@ -146,7 +164,7 @@ jobs:
             "avatar_url": "https://raw.githubusercontent.com/realpeyaj/peyajCustomDisc/main/peyajcustomdisc.png",
             "embeds": [
               {
-                "title": "Build Failed: ${{ github.repository }} (${APP_VERSION:-2.6})",
+                "title": "Build Failed: ${{ github.repository }} (${APP_VERSION:-2.7})",
                 "url": "$RUN_URL",
                 "color": 15158332,
                 "description": "Compilation or assembly failed.",

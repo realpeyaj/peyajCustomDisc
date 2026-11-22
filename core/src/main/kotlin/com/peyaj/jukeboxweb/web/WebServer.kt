@@ -46,7 +46,7 @@ class WebServer(
             
             // Intercept unauthenticated web requests and protect REST API endpoints
             val path = ctx.path()
-            if (path.startsWith("/download") || path.startsWith("/login") || path.startsWith("/unauthorized") || path.startsWith("/listen") || path.endsWith(".css") || path.endsWith(".js")) {
+            if (path.startsWith("/download") || path.startsWith("/login") || path.startsWith("/unauthorized") || path.startsWith("/listen") || path.startsWith("/fonts") || path.endsWith(".css") || path.endsWith(".js")) {
                 return@before
             }
             
@@ -59,6 +59,29 @@ class WebServer(
                 }
                 ctx.skipRemainingHandlers()
             }
+        }
+
+        app?.get("/fonts/{file}") { ctx ->
+            val allowed = mapOf(
+                "Minecraft-Tenv2.woff2" to "font/woff2",
+                "Minecraft-Seven_v2.woff" to "font/woff",
+                "NotoSans-Regular.woff2" to "font/woff2",
+                "NotoSans-Bold.woff2" to "font/woff2"
+            )
+            val file = ctx.pathParam("file")
+            val mime = allowed[file]
+            if (mime != null) {
+                val stream = WebServer::class.java.classLoader.getResourceAsStream("secure/fonts/$file")
+                if (stream != null) {
+                    ctx.contentType(mime)
+                    ctx.header("Cross-Origin-Resource-Policy", "cross-origin")
+                    ctx.header("Access-Control-Allow-Origin", "*")
+                    ctx.header("Cache-Control", "public, max-age=86400")
+                    ctx.result(stream)
+                    return@get
+                }
+            }
+            ctx.status(404).result("Not Found")
         }
 
         app?.get("/login") { ctx ->
@@ -102,25 +125,56 @@ class WebServer(
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Disc Creator - Security Login</title>
-                    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
                     <style>
+                        @font-face {
+                            font-family: 'MinecraftTenv2';
+                            src: url('/fonts/Minecraft-Tenv2.woff2') format('woff2');
+                            font-weight: 400;
+                            font-style: normal;
+                            font-display: swap;
+                        }
+                        @font-face {
+                            font-family: 'MinecraftSeven-v2';
+                            src: url('/fonts/Minecraft-Seven_v2.woff') format('woff');
+                            font-weight: 400;
+                            font-style: normal;
+                            font-display: swap;
+                        }
+                        @font-face {
+                            font-family: 'Noto Sans';
+                            src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+                            font-weight: 400;
+                            font-style: normal;
+                            font-display: swap;
+                        }
+                        @font-face {
+                            font-family: 'Noto Sans';
+                            src: url('/fonts/NotoSans-Bold.woff2') format('woff2');
+                            font-weight: 700;
+                            font-style: normal;
+                            font-display: swap;
+                        }
                         * {
                             box-sizing: border-box;
                             margin: 0;
                             padding: 0;
-                            font-family: 'VT323', monospace;
+                            font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                             -webkit-font-smoothing: antialiased;
                         }
+                        h1 {
+                            font-family: 'MinecraftTenv2', 'MinecraftSeven-v2', 'Noto Sans', monospace;
+                        }
+                        .btn {
+                            font-family: 'MinecraftSeven-v2', 'Noto Sans', monospace;
+                        }
                         body {
-                            background-color: #1a1a1a;
-                            background-image:
-                                linear-gradient(45deg, #2b2b2b 25%, transparent 25%),
-                                linear-gradient(-45deg, #2b2b2b 25%, transparent 25%),
-                                linear-gradient(45deg, transparent 75%, #2b2b2b 75%),
-                                linear-gradient(-45deg, transparent 75%, #2b2b2b 75%);
-                            background-size: 20px 20px;
-                            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
                             min-height: 100vh;
+                            background-color: #211811;
+                            background-image:
+                                linear-gradient(rgba(16, 12, 9, 0.58), rgba(16, 12, 9, 0.68)),
+                                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%233d291b'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%23322115'/%3E%3Crect x='4' y='1' width='2' height='1' fill='%23483121'/%3E%3Crect x='9' y='0' width='3' height='2' fill='%23362417'/%3E%3Crect x='14' y='1' width='2' height='2' fill='%234d3423'/%3E%3Crect x='2' y='3' width='2' height='2' fill='%23493221'/%3E%3Crect x='6' y='4' width='1' height='2' fill='%232e1e13'/%3E%3Crect x='11' y='3' width='2' height='2' fill='%23452f1f'/%3E%3Crect x='0' y='6' width='3' height='2' fill='%23342216'/%3E%3Crect x='5' y='7' width='2' height='1' fill='%23543a27'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%232d1d12'/%3E%3Crect x='13' y='7' width='3' height='2' fill='%23382518'/%3E%3Crect x='3' y='9' width='2' height='2' fill='%232e1e13'/%3E%3Crect x='7' y='10' width='3' height='2' fill='%23483121'/%3E%3Crect x='12' y='10' width='1' height='1' fill='%23525252'/%3E%3Crect x='1' y='12' width='2' height='2' fill='%23473020'/%3E%3Crect x='5' y='13' width='2' height='2' fill='%23312014'/%3E%3Crect x='9' y='13' width='2' height='2' fill='%23503725'/%3E%3Crect x='14' y='12' width='2' height='3' fill='%23322115'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%23505050'/%3E%3C/svg%3E");
+                            background-size: 100% 100%, 64px 64px;
+                            image-rendering: pixelated;
                             display: flex;
                             justify-content: center;
                             align-items: center;
@@ -129,102 +183,131 @@ class WebServer(
                         }
                         .container {
                             background-color: #c6c6c6;
-                            padding: 4px;
+                            border: 2px solid #2b2b2b;
                             width: 100%;
-                            max-width: 420px;
-                            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+                            max-width: 440px;
+                            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.48);
                         }
                         .window-inner {
                             background-color: #c6c6c6;
-                            border: 4px solid #fff;
-                            border-bottom-color: #555;
-                            border-right-color: #555;
+                            border-top: 3px solid #e2e2e2;
+                            border-left: 3px solid #e2e2e2;
+                            border-bottom: 3px solid #787878;
+                            border-right: 3px solid #787878;
                             padding: 24px;
                             display: flex;
                             flex-direction: column;
-                            gap: 16px;
+                            gap: 14px;
                             text-align: center;
                         }
+                        .disc-emblem {
+                            margin: 0 auto;
+                            width: 44px;
+                            height: 44px;
+                            background: #8b8b8b;
+                            border-top: 2px solid #545454;
+                            border-left: 2px solid #545454;
+                            border-right: 2px solid #e2e2e2;
+                            border-bottom: 2px solid #e2e2e2;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
                         h1 {
-                            font-size: 2.8rem;
-                            color: #202020;
-                            text-shadow: 1px 1px 0px #ffffff;
+                            font-size: 1.7rem;
+                            color: #363636;
+                            text-shadow: 1px 1px 0px #e6e6e6;
                             text-transform: uppercase;
-                            letter-spacing: 2px;
-                            font-weight: bold;
+                            letter-spacing: 0.5px;
+                            font-weight: 400;
                         }
                         .subtitle {
-                            font-size: 1.3rem;
-                            color: #333333;
-                            font-weight: bold;
+                            font-size: 0.92rem;
+                            color: #4a4a4a;
+                            font-weight: 400;
                         }
                         .error-msg {
-                            background: #2b0000;
-                            border: 2px solid #ff5555;
-                            color: #ff5555;
+                            background: #421b1b;
+                            border: 2px solid #d46868;
+                            color: #ffb3b3;
                             padding: 8px 12px;
-                            font-size: 1.2rem;
-                            font-weight: bold;
-                            text-shadow: none;
+                            font-size: 0.88rem;
+                            font-weight: 600;
                         }
                         input[type="password"] {
                             width: 100%;
-                            background: #000000;
-                            border: 2px solid #a0a0a0;
-                            border-top-color: #555;
-                            border-left-color: #555;
-                            color: #ffffff;
-                            padding: 10px 14px;
-                            font-size: 1.4rem;
-                            outline: none;
+                            background: #2b2b2b;
+                            border-top: 2px solid #1e1e1e;
+                            border-left: 2px solid #1e1e1e;
+                            border-right: 2px solid #8c8c8c;
+                            border-bottom: 2px solid #8c8c8c;
+                            color: #f3f3f3;
+                            padding: 10px 12px;
+                            font-size: 0.95rem;
                             text-align: center;
                         }
                         input[type="password"]:focus {
-                            border-color: #ffffff;
+                            outline: 2px solid #d8c95d;
+                            background: #242424;
                         }
                         .btn {
-                            background-color: #5c5c5c;
-                            border: 3px solid #ffffff;
-                            border-bottom-color: #2a2a2a;
-                            border-right-color: #2a2a2a;
-                            color: #ffffff !important;
-                            font-size: 1.6rem;
-                            font-weight: bold;
-                            padding: 10px 16px;
+                            background-color: #4b8c38;
+                            border: 2px solid #2d2d2d;
+                            box-shadow:
+                                inset 2px 2px 0 rgba(255, 255, 255, 0.24),
+                                inset -2px -3px 0 rgba(0, 0, 0, 0.28);
+                            color: #ffffff;
+                            font-size: 0.98rem;
+                            font-weight: 400;
+                            padding: 11px 16px 13px 16px;
                             cursor: pointer;
                             text-transform: uppercase;
-                            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
-                            letter-spacing: 1px;
+                            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.35);
+                            letter-spacing: 0.5px;
                             width: 100%;
-                            margin-top: 10px;
+                            margin-top: 12px;
                         }
                         .btn:hover {
-                            background-color: #707070;
+                            background-color: #559c41;
                         }
                         .btn:active {
-                            border: 3px solid #2a2a2a;
-                            border-bottom-color: #ffffff;
-                            border-right-color: #ffffff;
+                            box-shadow:
+                                inset 2px 2px 0 rgba(0, 0, 0, 0.3),
+                                inset -2px -2px 0 rgba(255, 255, 255, 0.16);
+                            padding-top: 12px;
+                            padding-bottom: 12px;
                         }
                         .help {
-                            font-size: 1.15rem;
-                            color: #333333;
-                            font-weight: bold;
-                            line-height: 1.4;
+                            font-size: 0.84rem;
+                            color: #444444;
+                            font-weight: 400;
+                            line-height: 1.45;
                             margin-top: 4px;
                         }
                         code {
-                            background: #000000;
+                            background: #2b2b2b;
                             padding: 2px 6px;
-                            border: 1px solid #555;
-                            color: #ffff55;
-                            font-size: 1.15rem;
+                            border: 1px solid #555555;
+                            color: #efe070;
+                            font-size: 0.84rem;
                         }
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <div class="window-inner">
+                            <div class="disc-emblem">
+                                <svg width="26" height="26" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                                    <rect x="5" y="2" width="6" height="1" fill="#181818" />
+                                    <rect x="3" y="3" width="10" height="1" fill="#252525" />
+                                    <rect x="2" y="4" width="12" height="8" fill="#1f1f1f" />
+                                    <rect x="3" y="5" width="10" height="6" fill="#323232" />
+                                    <rect x="5" y="6" width="6" height="4" fill="#f0c83c" />
+                                    <rect x="7" y="7" width="2" height="2" fill="#000000" />
+                                    <rect x="3" y="12" width="10" height="1" fill="#181818" />
+                                    <rect x="5" y="13" width="6" height="1" fill="#181818" />
+                                </svg>
+                            </div>
                             <h1>Disc Creator</h1>
                             <p class="subtitle">Security Authentication Required</p>
                             $errorMsg
@@ -351,6 +434,18 @@ class WebServer(
         
         app?.get("/api/discs") { ctx ->
             ctx.json(discManager.getAllDiscs())
+        }
+
+        app?.get("/api/disc/{id}/cover") { ctx ->
+            val safeId = ctx.pathParam("id").replace(Regex("[^a-zA-Z0-9_-]"), "")
+            val coverFile = File(platform.dataFolder, "discs/$safeId.png")
+            if (safeId.isNotEmpty() && coverFile.exists() && coverFile.isFile) {
+                ctx.contentType("image/png")
+                ctx.header("Cache-Control", "no-cache")
+                ctx.result(coverFile.inputStream())
+            } else {
+                ctx.status(404).result("Not Found")
+            }
         }
         
         app?.delete("/api/disc/{id}") { ctx ->

@@ -8,17 +8,24 @@ plugins {
     id("com.gradleup.shadow") version "9.6.1" apply false
     id("net.fabricmc.fabric-loom") version "1.17.20" apply false
     id("net.fabricmc.fabric-loom-remap") version "1.17.20" apply false
+    id("net.neoforged.moddev") version "2.0.148" apply false
 }
 
 allprojects {
     group = "com.peyaj"
-    val baseVersion = "2.6"
+    val baseVersion = "2.7"
     val buildNumber = System.getenv("BUILD_NUMBER")
     version = if (!buildNumber.isNullOrBlank()) "$baseVersion-b$buildNumber" else baseVersion
 
     repositories {
         mavenCentral()
         maven("https://maven.fabricmc.net/")
+        maven("https://maven.neoforged.net/releases")
+        maven("https://thedarkcolour.github.io/KotlinForForge/") {
+            content {
+                includeGroup("thedarkcolour")
+            }
+        }
         maven("https://repo.papermc.io/repository/maven-public/")
         maven("https://maven.maxhenkel.de/repository/public")
         maven("https://maven.lavalink.dev/releases")
@@ -58,6 +65,12 @@ subprojects {
 tasks.register("shadowJar") {
     group = "build"
     description = "Assembles shadow jars for runnable platform subprojects."
-    dependsOn(":paper:shadowJar", ":fabric-1.21:remapJar", ":fabric-26:shadowJar")
+    dependsOn(
+        ":paper:shadowJar",
+        ":fabric-1.21:remapJar",
+        ":fabric-26:shadowJar",
+        ":neoforge-1.21:shadowJar",
+        ":neoforge-26:shadowJar"
+    )
 }
 

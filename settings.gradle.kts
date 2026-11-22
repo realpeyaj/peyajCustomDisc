@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven("https://maven.fabricmc.net/")
+        maven("https://maven.neoforged.net/releases")
         mavenCentral()
     }
 }
@@ -16,4 +17,6 @@ include("core")
 include("paper")
 include("fabric-1.21")
 include("fabric-26")
+include("neoforge-1.21")
+include("neoforge-26")
 

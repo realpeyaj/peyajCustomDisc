@@ -5,120 +5,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Disc Creator - peyajCustomDisc</title>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <!-- FFmpeg Server-Side Mode -->
     <style>
+        @font-face {
+            font-family: 'MinecraftTenv2';
+            src: url('fonts/Minecraft-Tenv2.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'MinecraftSeven-v2';
+            src: url('fonts/Minecraft-Seven_v2.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Noto Sans';
+            src: url('fonts/NotoSans-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Noto Sans';
+            src: url('fonts/NotoSans-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         :root {
-            --mc-bg: #111;
-            --mc-text: #fff;
+            --mc-panel: #c6c6c6;
+            --mc-panel-sub: #bababa;
+            --mc-slot: #8b8b8b;
+            --mc-bevel-light: #e2e2e2;
+            --mc-bevel-dark: #787878;
+            --mc-slot-dark: #545454;
+            --mc-text-dark: #363636;
+            --mc-stone: #6e6e6e;
+            --mc-stone-hover: #7380b8;
+            --mc-green: #4b8c38;
+            --mc-red: #b2433d;
+            --mc-blue: #3b6fae;
+            --mc-aqua: #6fe3e3;
+            --mc-yellow: #efe070;
+            --mc-lime: #6ee86e;
+            --mc-dark-aqua: #4cbcbc;
+            --mc-gray: #b0b0b0;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'VT323', monospace;
+            font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
-        body {
-            background-color: #1a1a1a;
-            background-image:
-                linear-gradient(45deg, #2b2b2b 25%, transparent 25%),
-                linear-gradient(-45deg, #2b2b2b 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #2b2b2b 75%),
-                linear-gradient(-45deg, transparent 75%, #2b2b2b 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            padding: 20px;
+        h1 {
+            font-family: 'MinecraftTenv2', 'MinecraftSeven-v2', 'Noto Sans', monospace;
         }
 
-        .container {
-            background-color: #c6c6c6;
-            padding: 4px;
+        .mc-btn, .section-heading, .toast-heading {
+            font-family: 'MinecraftSeven-v2', 'Noto Sans', monospace;
+        }
+
+        /* Tiled Minecraft dirt background with gentle dark overlay */
+        body {
+            min-height: 100vh;
+            background-color: #211811;
+            background-image:
+                linear-gradient(rgba(16, 12, 9, 0.58), rgba(16, 12, 9, 0.68)),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%233d291b'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%23322115'/%3E%3Crect x='4' y='1' width='2' height='1' fill='%23483121'/%3E%3Crect x='9' y='0' width='3' height='2' fill='%23362417'/%3E%3Crect x='14' y='1' width='2' height='2' fill='%234d3423'/%3E%3Crect x='2' y='3' width='2' height='2' fill='%23493221'/%3E%3Crect x='6' y='4' width='1' height='2' fill='%232e1e13'/%3E%3Crect x='11' y='3' width='2' height='2' fill='%23452f1f'/%3E%3Crect x='0' y='6' width='3' height='2' fill='%23342216'/%3E%3Crect x='5' y='7' width='2' height='1' fill='%23543a27'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%232d1d12'/%3E%3Crect x='13' y='7' width='3' height='2' fill='%23382518'/%3E%3Crect x='3' y='9' width='2' height='2' fill='%232e1e13'/%3E%3Crect x='7' y='10' width='3' height='2' fill='%23483121'/%3E%3Crect x='12' y='10' width='1' height='1' fill='%23525252'/%3E%3Crect x='1' y='12' width='2' height='2' fill='%23473020'/%3E%3Crect x='5' y='13' width='2' height='2' fill='%23312014'/%3E%3Crect x='9' y='13' width='2' height='2' fill='%23503725'/%3E%3Crect x='14' y='12' width='2' height='3' fill='%23322115'/%3E%3Crect x='4' y='5' width='1' height='1' fill='%23505050'/%3E%3C/svg%3E");
+            background-size: 100% 100%, 64px 64px;
+            background-attachment: fixed;
+            image-rendering: pixelated;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 28px 16px;
+            color: #ffffff;
+        }
+
+        /* Minecraft Window Container */
+        .mc-window {
             width: 100%;
-            max-width: 1050px;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.25);
+            max-width: 1120px;
+            background-color: var(--mc-panel);
+            border: 2px solid #2b2b2b;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.48);
             position: relative;
         }
 
         .window-inner {
-            background-color: #c6c6c6;
-            border: 4px solid #fff;
-            border-bottom-color: #555;
-            border-right-color: #555;
-            padding: 20px;
+            background-color: var(--mc-panel);
+            border-top: 3px solid var(--mc-bevel-light);
+            border-left: 3px solid var(--mc-bevel-light);
+            border-right: 3px solid var(--mc-bevel-dark);
+            border-bottom: 3px solid var(--mc-bevel-dark);
+            padding: 18px 20px 20px 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 16px;
         }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            body {
-                padding: 10px;
-            }
-            .container {
-                max-width: 100%;
-                box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
-            }
-            .window-inner {
-                padding: 12px;
-                gap: 10px;
-            }
-            h1 {
-                font-size: 2.2rem;
-            }
-            .panel-box {
-                padding: 10px;
-            }
-            .drop-zone {
-                padding: 10px;
-            }
-            .btn {
-                font-size: 1.3rem !important;
-                padding: 8px !important;
-            }
-        }
-
-        .panel-box {
-            background: #8b8b8b;
-            border: 2px solid #fff;
-            border-top-color: #373737;
-            border-left-color: #373737;
-            padding: 15px;
+        /* Window Title Header */
+        .mc-header {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #9c9c9c;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 5px;
+        .mc-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mc-title-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--mc-slot);
+            border-top: 2px solid var(--mc-slot-dark);
+            border-left: 2px solid var(--mc-slot-dark);
+            border-right: 2px solid var(--mc-bevel-light);
+            border-bottom: 2px solid var(--mc-bevel-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         h1 {
-            font-size: 3.2rem;
-            color: #202020;
-            text-shadow: 1px 1px 0px #ffffff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: bold;
+            font-size: 1.75rem;
+            color: var(--mc-text-dark);
+            text-shadow: 1px 1px 0 #e6e6e6;
+            letter-spacing: 0.5px;
+            line-height: 1.15;
+            font-weight: 400;
         }
 
+        .mc-subtitle {
+            font-size: 0.85rem;
+            color: #4f4f4f;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Main 2-column grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.08fr;
+            gap: 18px;
+            align-items: start;
+        }
+
+        /* Sub-panel sections */
+        .panel-section {
+            min-width: 0;
+            background: var(--mc-panel-sub);
+            border-top: 2px solid #d4d4d4;
+            border-left: 2px solid #d4d4d4;
+            border-right: 2px solid #8a8a8a;
+            border-bottom: 2px solid #8a8a8a;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 1.05rem;
+            font-weight: 400;
+            color: #363636;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-heading-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Form Elements (Anvil input boxes) */
         .form-group {
             display: flex;
             flex-direction: column;
@@ -126,269 +217,754 @@
         }
 
         label {
-            font-size: 1.4rem;
-            color: #1a1a1a;
-            font-weight: bold;
-            text-shadow: none;
+            font-size: 0.88rem;
+            color: #2c2c2c;
+            font-weight: 700;
         }
 
-        input,
+        .mc-input,
+        input[type="text"],
         textarea {
-            background: #000000;
-            border: 2px solid #a0a0a0;
-            border-top-color: #555;
-            border-left-color: #555;
-            color: #ffffff;
-            padding: 10px;
-            font-size: 1.3rem;
-            outline: none;
+            width: 100%;
+            background: #2b2b2b;
+            border-top: 2px solid #1e1e1e;
+            border-left: 2px solid #1e1e1e;
+            border-right: 2px solid #8c8c8c;
+            border-bottom: 2px solid #8c8c8c;
+            color: #f3f3f3;
+            padding: 9px 11px;
+            font-size: 0.92rem;
+            font-weight: 400;
+            line-height: 1.4;
+            resize: vertical;
         }
 
-        input:focus,
+        .mc-input::placeholder,
+        input[type="text"]::placeholder,
+        textarea::placeholder {
+            color: #969696;
+        }
+
+        .mc-input:focus,
+        input[type="text"]:focus,
         textarea:focus {
-            border-color: #ffffff;
+            outline: 2px solid #d8c95d;
+            background: #242424;
         }
 
+        /* Audio Drop Zone (Jukebox Well) */
         .drop-zone {
-            background-color: #7d7d7d;
-            border: 2px solid #fff;
-            border-top-color: #373737;
-            border-left-color: #373737;
-            padding: 15px;
+            background: #2e2e2e;
+            border-top: 2px solid #1e1e1e;
+            border-left: 2px solid #1e1e1e;
+            border-right: 2px solid #8c8c8c;
+            border-bottom: 2px solid #8c8c8c;
+            padding: 14px;
             text-align: center;
-            transition: all 0.2s;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.12s;
         }
 
         .drop-zone:hover {
-            background-color: #9c9c9c;
+            background: #363636;
+            border-color: #6f6f6f;
         }
 
         .drop-zone.dragover {
-            background-color: #5d9e5a;
+            background: #2c4a26;
+            outline: 2px solid var(--mc-lime);
         }
 
-        .drop-zone p {
+        .drop-title {
+            font-size: 0.92rem;
+            color: #f2f2f2;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .drop-hint {
+            font-size: 0.78rem;
+            color: var(--mc-yellow);
+        }
+
+        #converterStatus {
+            display: none;
+            font-size: 0.78rem;
+            color: var(--mc-lime);
+            margin-top: 2px;
+        }
+
+        /* Minecraft Tooltip Preview */
+        .mc-tooltip {
+            background: #1e1624;
+            border: 2px solid #442466;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .tt-label {
+            font-size: 0.7rem;
+            color: #9e94ad;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+            letter-spacing: 0.4px;
+        }
+
+        .tt-name {
+            color: var(--mc-aqua);
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .tt-artist {
+            color: var(--mc-yellow);
+        }
+
+        .tt-lore {
+            color: var(--mc-dark-aqua);
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-top: 2px;
+        }
+
+        /* Classic Minecraft Stone Button System */
+        .mc-btn {
+            appearance: none;
+            background-color: var(--mc-stone);
+            border: 2px solid #2d2d2d;
+            box-shadow:
+                inset 2px 2px 0 rgba(255, 255, 255, 0.24),
+                inset -2px -3px 0 rgba(0, 0, 0, 0.28);
             color: #ffffff;
-            font-size: 1.3rem;
-            font-weight: bold;
-            text-shadow: none;
-            margin-bottom: 5px;
-        }
-
-        .hint {
-            font-size: 1.1rem;
-            color: #ffff55;
-            text-shadow: none;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-
-        .btn {
-            background-color: #5c5c5c;
-            border: 3px solid #ffffff;
-            border-bottom-color: #2a2a2a;
-            border-right-color: #2a2a2a;
-            color: #ffffff !important;
-            font-size: 1.6rem;
-            font-weight: bold;
-            padding: 10px 16px;
+            font-size: 0.95rem;
+            font-weight: 400;
+            padding: 9px 14px 11px 14px;
             cursor: pointer;
             text-transform: uppercase;
-            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
-            letter-spacing: 1px;
-            width: 100%;
-            position: relative;
-            line-height: 1.1;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.38);
+            letter-spacing: 0.5px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            line-height: 1.1;
+            user-select: none;
         }
 
-        .btn:hover {
-            background-color: #787878;
-            border-color: #ffffa0;
-            border-bottom-color: #4a4a2a;
-            border-right-color: #4a4a2a;
-            color: #ffffa0 !important;
+        .mc-btn:hover:not(:disabled) {
+            background-color: var(--mc-stone-hover);
+            color: #fff69e;
         }
 
-        .btn:active {
-            border: 3px solid #2a2a2a;
-            border-bottom-color: #ffffff;
-            border-right-color: #ffffff;
+        .mc-btn:active:not(:disabled) {
+            box-shadow:
+                inset 2px 2px 0 rgba(0, 0, 0, 0.3),
+                inset -2px -2px 0 rgba(255, 255, 255, 0.16);
+            padding-top: 10px;
+            padding-bottom: 10px;
         }
 
-        .btn:disabled {
-            background-color: #383838;
-            color: #888888 !important;
-            border-color: #555555;
+        .mc-btn:disabled {
+            background-color: #4f4f4f;
+            color: #9e9e9e;
+            box-shadow: none;
+            text-shadow: none;
             cursor: not-allowed;
+        }
+
+        .mc-btn-green {
+            background-color: var(--mc-green);
+            font-size: 1.05rem;
+            padding: 11px 18px 13px 18px;
+            width: 100%;
+        }
+
+        .mc-btn-green:hover:not(:disabled) {
+            background-color: #559c41;
+            color: #ffffff;
+        }
+
+        .mc-btn-red {
+            background-color: var(--mc-red);
+        }
+
+        .mc-btn-red:hover:not(:disabled) {
+            background-color: #c44f48;
+            color: #ffffff;
+        }
+
+        .mc-btn-blue {
+            background-color: var(--mc-blue);
+        }
+
+        .mc-btn-blue:hover:not(:disabled) {
+            background-color: #487fc2;
+            color: #ffffff;
+        }
+
+        .mc-btn-sm {
+            font-size: 0.85rem;
+            padding: 7px 11px 9px 11px;
+            gap: 5px;
             text-shadow: none;
         }
 
-        .dl-section {
+        .mc-btn-sm:active:not(:disabled) {
+            padding-top: 7px;
+            padding-bottom: 7px;
+        }
+
+        .mc-btn.active-tool {
+            background-color: var(--mc-green);
+            outline: 2px solid #e6d86c;
+            color: #ffffff;
+        }
+
+        /* Texture Studio */
+        .studio-box {
+            background: #2b2b2b;
+            border-top: 2px solid #1e1e1e;
+            border-left: 2px solid #1e1e1e;
+            border-right: 2px solid #8c8c8c;
+            border-bottom: 2px solid #8c8c8c;
+            padding: 12px;
             display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .studio-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 1px solid #454545;
+            padding-bottom: 8px;
+        }
+
+        .zoom-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.84rem;
+            color: #d6d6d6;
+        }
+
+        .zoom-val {
+            color: var(--mc-yellow);
+            min-width: 28px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .studio-workspace {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Checkerboard transparent canvas frame */
+        .canvas-well {
+            overflow: auto;
+            max-width: 100%;
+            max-height: 440px;
+            padding: 8px;
+            background-color: #1f1f1f;
+            background-image:
+                linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+                linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+                linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            border: 2px solid #181818;
+        }
+
+        .canvas-stage {
+            position: relative;
+            width: 144px;
+            height: 144px;
+        }
+
+        #discCanvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            cursor: crosshair;
+            display: block;
+            touch-action: none;
+        }
+
+        #guideCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            image-rendering: pixelated;
+        }
+
+        .studio-controls {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
-            margin-top: 10px;
-            border-top: 2px solid #555;
-            padding-top: 15px;
+            flex: 1 1 245px;
+            min-width: 0;
+            max-width: 100%;
         }
 
-        .btn-small {
-            font-size: 1.2rem;
-            padding: 6px 12px;
-            background-color: #5c5c5c;
+        .tool-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: 100%;
         }
 
-        .toast {
+        .tool-row .mc-btn-sm {
+            min-width: 0;
+            width: 100%;
+            padding: 7px 6px 9px 6px;
+            font-size: 0.78rem;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: #353535;
+            border: 1px solid #4c4c4c;
+            padding: 6px 10px;
+            font-size: 0.84rem;
+            color: #e0e0e0;
+        }
+
+        #drawColor {
+            width: 38px;
+            height: 26px;
+            border: 2px solid #8a8a8a;
+            background: transparent;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .palette-label {
+            font-size: 0.74rem;
+            color: #c2c2c2;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+
+        .swatch {
+            height: 25px;
+            border-top: 2px solid rgba(255, 255, 255, 0.28);
+            border-left: 2px solid rgba(255, 255, 255, 0.28);
+            border-right: 2px solid rgba(0, 0, 0, 0.35);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.35);
+            cursor: pointer;
+        }
+
+        .swatch:hover,
+        .swatch.active-swatch {
+            outline: 2px solid var(--mc-yellow);
+        }
+
+        /* Disc Inventory (Chest Slots List) */
+        .inventory-well {
+            background: #2b2b2b;
+            border-top: 2px solid #1e1e1e;
+            border-left: 2px solid #1e1e1e;
+            border-right: 2px solid #8c8c8c;
+            border-bottom: 2px solid #8c8c8c;
+            padding: 10px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .disc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .disc-row {
+            background: #353535;
+            border: 1px solid #4a4a4a;
+            padding: 6px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .disc-row:hover {
+            background: #3e3e3e;
+            border-color: #6e6e6e;
+        }
+
+        .disc-row-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        /* Recessed Minecraft Item Slot */
+        .mc-item-slot {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            background: var(--mc-slot);
+            border-top: 2px solid var(--mc-slot-dark);
+            border-left: 2px solid var(--mc-slot-dark);
+            border-right: 2px solid #c8c8c8;
+            border-bottom: 2px solid #c8c8c8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px;
+        }
+
+        .mc-item-slot img {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            display: block;
+        }
+
+        .disc-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .disc-title {
+            color: var(--mc-aqua);
+            font-size: 0.94rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .disc-sub {
+            color: var(--mc-yellow);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .disc-dur {
+            color: var(--mc-gray);
+            margin-left: 6px;
+        }
+
+        .empty-state {
+            color: #b8b8b8;
+            font-size: 0.88rem;
+            text-align: center;
+            padding: 18px 8px;
+        }
+
+        .count-badge {
+            background: #333333;
+            border: 1px solid #555555;
+            color: var(--mc-yellow);
+            padding: 2px 10px;
+            font-size: 0.8rem;
+        }
+
+        /* Minecraft Advancement-Style Toast */
+        .mc-toast {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #2a2a2a;
-            border: 2px solid #fff;
-            padding: 10px 20px;
-            color: #fff;
-            box-shadow: 4px 4px 0 #000;
+            top: 18px;
+            right: 18px;
+            background: #2b2b2b;
+            border: 2px solid #555555;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+            padding: 10px 14px;
             display: none;
-            animation: slideIn 0.3s;
+            align-items: center;
+            gap: 10px;
             z-index: 1000;
+            animation: slideIn 0.2s steps(6);
+            max-width: 340px;
         }
 
         @keyframes slideIn {
             from {
-                transform: translateX(100%);
+                transform: translateX(110%);
             }
-
             to {
                 transform: translateX(0);
             }
         }
 
-        #converterStatus {
-            display: none;
-            font-size: 0.9em;
-            color: #55ff55;
-            margin-top: 5px;
+        .toast-heading {
+            font-size: 0.92rem;
+            color: var(--mc-yellow);
         }
 
-        .active-tool {
-            background: #55ff55 !important;
-            color: #000000 !important;
-            font-weight: bold;
+        .toast-body {
+            font-size: 0.84rem;
+            color: #f0f0f0;
+        }
+
+        .px-icon {
+            width: 16px;
+            height: 16px;
+            image-rendering: pixelated;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 840px) {
+            body {
+                padding: 12px 8px;
+            }
+            .window-inner {
+                padding: 12px;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.25rem;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="toast" id="toast">Disc Created!</div>
+    <!-- Minecraft Advancement Toast -->
+    <div class="mc-toast" id="toast">
+        <svg class="px-icon" style="width:24px;height:24px;" viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <rect x="5" y="1" width="6" height="1" fill="#111" />
+            <rect x="3" y="2" width="10" height="1" fill="#111" />
+            <rect x="2" y="3" width="12" height="10" fill="#2c2c2c" />
+            <rect x="5" y="5" width="6" height="6" fill="#55ffff" />
+            <rect x="7" y="7" width="2" height="2" fill="#000" />
+            <rect x="3" y="13" width="10" height="1" fill="#111" />
+            <rect x="5" y="14" width="6" height="1" fill="#111" />
+        </svg>
+        <div>
+            <div class="toast-heading" id="toastHeading">Notification</div>
+            <div class="toast-body" id="toastBody">Disc Created!</div>
+        </div>
+    </div>
 
-    <div class="container">
+    <div class="mc-window">
         <div class="window-inner">
-            <header>
-                <h1>Disc Creator</h1>
+            <header class="mc-header">
+                <div class="mc-title-wrap">
+                    <div class="mc-title-icon" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                            <rect x="5" y="2" width="6" height="1" fill="#181818" />
+                            <rect x="3" y="3" width="10" height="1" fill="#252525" />
+                            <rect x="2" y="4" width="12" height="8" fill="#1f1f1f" />
+                            <rect x="3" y="5" width="10" height="6" fill="#323232" />
+                            <rect x="5" y="6" width="6" height="4" fill="#f0c83c" />
+                            <rect x="7" y="7" width="2" height="2" fill="#000000" />
+                            <rect x="3" y="12" width="10" height="1" fill="#181818" />
+                            <rect x="5" y="13" width="6" height="1" fill="#181818" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1>Disc Creator</h1>
+                        <div class="mc-subtitle">peyajCustomDisc</div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/download/pack" class="mc-btn mc-btn-sm">
+                        <svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                            <rect x="2" y="3" width="12" height="10" fill="#a06834" />
+                            <rect x="2" y="3" width="12" height="2" fill="#c9894b" />
+                            <rect x="2" y="7" width="12" height="1" fill="#3a2410" />
+                            <rect x="7" y="6" width="2" height="3" fill="#e6e6e6" />
+                        </svg>
+                        Java Pack
+                    </a>
+                    <a href="/download/geyser" class="mc-btn mc-btn-sm">
+                        <svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                            <rect x="2" y="2" width="12" height="12" fill="#5e5e5e" />
+                            <rect x="2" y="2" width="12" height="3" fill="#58a33a" />
+                            <rect x="4" y="8" width="3" height="2" fill="#414141" />
+                            <rect x="9" y="10" width="4" height="2" fill="#414141" />
+                        </svg>
+                        Geyser Pack
+                    </a>
+                </div>
             </header>
 
             <form id="discForm" action="/api/disc" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="style" value="custom">
 
                 <div class="dashboard-grid">
-                    <!-- LEFT COLUMN: Disc Metadata & Audio -->
-                    <div class="panel-box">
+                    <!-- LEFT PANEL: Metadata, Audio & Live Tooltip -->
+                    <div class="panel-section">
                         <div class="form-group">
-                            <label>Disc Name</label>
-                            <input type="text" name="name" placeholder="Ex: Rush E" required>
+                            <label for="inputName">Disc Name</label>
+                            <input type="text" id="inputName" name="name" placeholder="Ex: Rush E" required>
                         </div>
 
                         <div class="form-group">
-                            <label>Author / Artist</label>
-                            <input type="text" name="author" placeholder="Ex: Sheet Music Boss" required>
+                            <label for="inputAuthor">Author / Artist</label>
+                            <input type="text" id="inputAuthor" name="author" placeholder="Ex: Sheet Music Boss" required>
                         </div>
 
                         <div class="form-group">
-                            <label>Lore (Tooltip)</label>
-                            <textarea name="lore" placeholder="Lines separated by enter..." rows="3"></textarea>
+                            <label for="inputLore">Lore (Tooltip)</label>
+                            <textarea id="inputLore" name="lore" placeholder="Lines separated by enter..." rows="3"></textarea>
                         </div>
 
                         <div class="form-group">
                             <label>Audio Source</label>
-                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                                <p id="fileNameDisplay">Drag & Drop .mp3 or .ogg</p>
-                                <input type="file" id="fileInput" name="file" accept=".ogg,.mp3" required style="display: none;">
-                                <p class="hint">MP3s will be auto-converted!</p>
-                                <div id="converterStatus">Initializing Converter...</div>
+                            <div class="drop-zone" id="dropZone" role="button" tabindex="0">
+                                <svg width="24" height="24" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+                                    <rect x="7" y="2" width="2" height="9" fill="#55ff55" />
+                                    <rect x="9" y="2" width="4" height="3" fill="#55ff55" />
+                                    <rect x="4" y="9" width="5" height="4" fill="#55ff55" />
+                                </svg>
+                                <p class="drop-title" id="fileNameDisplay">Drag &amp; Drop .mp3 or .ogg</p>
+                                <input type="file" id="fileInput" name="file" accept=".ogg,.mp3,.wav,.flac,.m4a" style="display: none;">
+                                <p class="drop-hint">MP3s are auto-converted by the server</p>
+                                <div id="converterStatus"></div>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn" style="margin-top: 10px;">Forge Disc</button>
+                        <!-- Live Minecraft In-Game Item Tooltip Preview -->
+                        <div class="mc-tooltip" aria-label="In-game item tooltip preview">
+                            <div class="tt-label">In-Game Tooltip Preview</div>
+                            <div class="tt-name" id="previewName">Custom Disc</div>
+                            <div class="tt-artist" id="previewArtist">Artist: Unknown Artist</div>
+                            <div class="tt-lore" id="previewLore" style="display:none;"></div>
+                        </div>
+
+                        <button type="submit" id="forgeBtn" class="mc-btn mc-btn-green">Forge Disc</button>
                     </div>
 
-                    <!-- RIGHT COLUMN: Pixel Art Studio & Inventory -->
-                    <div class="panel-box">
-                        <div class="form-group">
-                            <label style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                <span>Custom Disc Designer</span>
-                                <div style="display:flex; gap:8px;">
-                                    <button type="button" id="resetBtn" class="btn btn-small" style="width:auto; padding:4px 10px; font-size:1.1rem; background:#d32f2f; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🧹 Reset</button>
-                                    <button type="button" id="randomizeBtn" class="btn btn-small" style="width:auto; padding:4px 10px; font-size:1.1rem; background:#1976d2; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🎲 Randomize</button>
+                    <!-- RIGHT PANEL: Texture Studio & Disc Inventory -->
+                    <div class="panel-section">
+                        <div class="section-heading">
+                            <span class="section-heading-left">
+                                <svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                                    <rect x="3" y="2" width="10" height="12" fill="#e6d6a8" />
+                                    <rect x="5" y="4" width="6" height="4" fill="#55ffff" />
+                                    <rect x="5" y="9" width="3" height="3" fill="#ff5555" />
+                                    <rect x="9" y="9" width="2" height="3" fill="#55ff55" />
+                                </svg>
+                                Custom Disc Designer
+                            </span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" id="resetBtn" class="mc-btn mc-btn-red mc-btn-sm">
+                                    <svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                                        <rect x="3" y="4" width="10" height="2" fill="#fff" />
+                                        <rect x="6" y="2" width="4" height="2" fill="#fff" />
+                                        <rect x="4" y="6" width="8" height="8" fill="#ffd2d2" />
+                                    </svg>
+                                    Reset
+                                </button>
+                                <button type="button" id="randomizeBtn" class="mc-btn mc-btn-blue mc-btn-sm">
+                                    <svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                                        <rect x="2" y="2" width="12" height="12" fill="#ffffff" />
+                                        <rect x="4" y="4" width="2" height="2" fill="#1d4477" />
+                                        <rect x="10" y="4" width="2" height="2" fill="#1d4477" />
+                                        <rect x="7" y="7" width="2" height="2" fill="#1d4477" />
+                                        <rect x="4" y="10" width="2" height="2" fill="#1d4477" />
+                                        <rect x="10" y="10" width="2" height="2" fill="#1d4477" />
+                                    </svg>
+                                    Randomize
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="studio-box">
+                            <div class="studio-bar">
+                                <span style="font-size:0.84rem; color:#cccccc;">16x16 Pixel Texture</span>
+                                <div class="zoom-group">
+                                    <span>Zoom:</span>
+                                    <button type="button" id="zoomOutBtn" class="mc-btn mc-btn-sm" style="padding:3px 9px 5px 9px;">-</button>
+                                    <span id="zoomLevelText" class="zoom-val">1x</span>
+                                    <button type="button" id="zoomInBtn" class="mc-btn mc-btn-sm" style="padding:3px 9px 5px 9px;">+</button>
                                 </div>
-                            </label>
-                            <div style="background:#262626; border:2px solid #fff; border-top-color:#373737; border-left-color:#373737; padding:14px; display:flex; flex-direction:column; gap:12px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; color:#fff; font-weight:bold; border-bottom:1px solid #555; padding-bottom:6px;">
-                                    <span style="text-shadow:1px 1px 0px #000;">🔍 Canvas Zoom:</span>
-                                    <div style="display:flex; gap:6px; align-items:center;">
-                                        <button type="button" id="zoomOutBtn" class="btn btn-small" style="width:auto; padding:2px 10px; font-size:1.1rem; background:#424242; border:2px solid #fff; color:#fff; font-weight:bold;">-</button>
-                                        <span id="zoomLevelText" style="color:#ffff55; font-size:1.1rem; font-weight:bold; min-width:24px; text-align:center;">1x</span>
-                                        <button type="button" id="zoomInBtn" class="btn btn-small" style="width:auto; padding:2px 10px; font-size:1.1rem; background:#424242; border:2px solid #fff; color:#fff; font-weight:bold;">+</button>
+                            </div>
+
+                            <div class="studio-workspace">
+                                <div class="canvas-well">
+                                    <div class="canvas-stage" id="canvasStage">
+                                        <canvas id="discCanvas" width="16" height="16"></canvas>
+                                        <canvas id="guideCanvas" width="256" height="256"></canvas>
                                     </div>
                                 </div>
-                                <div style="display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap;">
-                                    <div style="overflow:auto; max-width:100%; max-height:260px; padding:6px; background:#000; border:2px solid #fff;">
-                                        <canvas id="discCanvas" width="16" height="16" style="width:140px; height:140px; image-rendering:pixelated; background:transparent; cursor:crosshair; display:block;"></canvas>
+
+                                <div class="studio-controls">
+                                    <div class="tool-row">
+                                        <button type="button" id="toolPencil" class="mc-btn mc-btn-sm tool-btn active-tool">Paint</button>
+                                        <button type="button" id="toolFill" class="mc-btn mc-btn-sm tool-btn">Fill</button>
+                                        <button type="button" id="toolEraser" class="mc-btn mc-btn-sm tool-btn">Erase</button>
                                     </div>
-                                    <div style="display:flex; flex-direction:column; gap:10px;">
-                                        <div style="display:flex; gap:6px;">
-                                            <button type="button" id="toolPencil" class="btn btn-small tool-btn active-tool" style="padding:6px 12px; font-size:1.1rem; background:#388e3c; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">✏️ Paint</button>
-                                            <button type="button" id="toolFill" class="btn btn-small tool-btn" style="padding:6px 12px; font-size:1.1rem; background:#f57c00; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🪣 Fill</button>
-                                            <button type="button" id="toolEraser" class="btn btn-small tool-btn" style="padding:6px 12px; font-size:1.1rem; background:#7b1fa2; border:2px solid #fff; color:#fff; font-weight:bold; text-shadow:1px 1px 0px #000;">🧼 Erase</button>
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-                                            <span style="font-size:0.85rem; color:#fff; font-weight:bold;">🎨 Color Wheel:</span>
-                                            <input type="color" id="drawColor" value="#f0c83c" style="border:1px solid #aaa; background:none; width:36px; height:30px; cursor:pointer;" title="Click to pick custom color wheel">
-                                        </div>
-                                        <div style="font-size:0.75rem; color:#aaa; margin-top:2px;">Quick Palette Swatches:</div>
-                                        <div style="display:grid; grid-template-columns: repeat(6, 20px); gap:4px;" id="palette">
-                                            <div class="swatch" data-color="#282828" style="background:#282828; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#282828 Vinyl"></div>
-                                            <div class="swatch" data-color="#f0c83c" style="background:#f0c83c; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#f0c83c Gold"></div>
-                                            <div class="swatch" data-color="#cc3333" style="background:#cc3333; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#cc3333 Red"></div>
-                                            <div class="swatch" data-color="#33cc66" style="background:#33cc66; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#33cc66 Green"></div>
-                                            <div class="swatch" data-color="#3366cc" style="background:#3366cc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#3366cc Blue"></div>
-                                            <div class="swatch" data-color="#9933cc" style="background:#9933cc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#9933cc Purple"></div>
-                                            <div class="swatch" data-color="#ffffff" style="background:#ffffff; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#ffffff White"></div>
-                                            <div class="swatch" data-color="#ff9900" style="background:#ff9900; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#ff9900 Orange"></div>
-                                            <div class="swatch" data-color="#00cccc" style="background:#00cccc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#00cccc Cyan"></div>
-                                            <div class="swatch" data-color="#ff66cc" style="background:#ff66cc; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#ff66cc Pink"></div>
-                                            <div class="swatch" data-color="#999999" style="background:#999999; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#999999 Gray"></div>
-                                            <div class="swatch" data-color="#55ff55" style="background:#55ff55; width:20px; height:20px; border:1px solid #777; cursor:pointer;" title="#55ff55 Lime"></div>
-                                        </div>
+
+                                    <div class="color-row">
+                                        <span>Custom Color</span>
+                                        <input type="color" id="drawColor" value="#f0c83c" title="Pick custom color">
+                                    </div>
+
+                                    <div class="palette-label">Dye Swatches</div>
+                                    <div class="palette-grid" id="palette">
+                                        <div class="swatch" data-color="#282828" style="background:#282828;" title="Vinyl Black"></div>
+                                        <div class="swatch active-swatch" data-color="#f0c83c" style="background:#f0c83c;" title="Gold"></div>
+                                        <div class="swatch" data-color="#cc3333" style="background:#cc3333;" title="Redstone Red"></div>
+                                        <div class="swatch" data-color="#33cc66" style="background:#33cc66;" title="Emerald"></div>
+                                        <div class="swatch" data-color="#3366cc" style="background:#3366cc;" title="Lapis Blue"></div>
+                                        <div class="swatch" data-color="#9933cc" style="background:#9933cc;" title="Amethyst"></div>
+                                        <div class="swatch" data-color="#ffffff" style="background:#ffffff;" title="Quartz White"></div>
+                                        <div class="swatch" data-color="#ff9900" style="background:#ff9900;" title="Amber"></div>
+                                        <div class="swatch" data-color="#00cccc" style="background:#00cccc;" title="Diamond Cyan"></div>
+                                        <div class="swatch" data-color="#ff66cc" style="background:#ff66cc;" title="Pink Dye"></div>
+                                        <div class="swatch" data-color="#999999" style="background:#999999;" title="Iron Gray"></div>
+                                        <div class="swatch" data-color="#55ff55" style="background:#55ff55;" title="Creeper Lime"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="dl-section">
-                            <a href="/download/pack" style="width: 50%; text-decoration: none;">
-                                <button type="button" class="btn btn-small">Java Pack</button>
-                            </a>
-                            <a href="/download/geyser" style="width: 50%; text-decoration: none;">
-                                <button type="button" class="btn btn-small">Geyser Pack</button>
-                            </a>
-                        </div>
-
-                        <div id="library" style="margin-top:10px;">
-                            <h3 style="font-size:1.5rem; color:#38bdf8; font-weight:bold; margin-bottom:8px; text-shadow:1px 1px 0px #000;">Disc Inventory</h3>
-                            <div id="discList">Loading...</div>
+                        <div id="library">
+                            <div class="section-heading" style="margin-bottom:8px;">
+                                <span class="section-heading-left">
+                                    <svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                                        <rect x="2" y="3" width="12" height="10" fill="#a4723c" />
+                                        <rect x="2" y="7" width="12" height="1" fill="#3a2310" />
+                                        <rect x="7" y="6" width="2" height="3" fill="#e6e6e6" />
+                                    </svg>
+                                    Disc Inventory
+                                </span>
+                                <span class="count-badge" id="discCountBadge">0 Discs</span>
+                            </div>
+                            <div class="inventory-well" id="discList">
+                                <div class="empty-state">Loading inventory...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -402,14 +978,59 @@
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const form = document.getElementById('discForm');
         const toast = document.getElementById('toast');
+        const toastHeading = document.getElementById('toastHeading');
+        const toastBody = document.getElementById('toastBody');
         const discList = document.getElementById('discList');
+        const discCountBadge = document.getElementById('discCountBadge');
         const converterStatus = document.getElementById('converterStatus');
+        const forgeBtn = document.getElementById('forgeBtn');
 
-        const coverNameDisplay = document.getElementById('coverNameDisplay');
-        const coverInput = document.getElementById('coverInput');
+        const inputName = document.getElementById('inputName');
+        const inputAuthor = document.getElementById('inputAuthor');
+        const inputLore = document.getElementById('inputLore');
+        const previewName = document.getElementById('previewName');
+        const previewArtist = document.getElementById('previewArtist');
+        const previewLore = document.getElementById('previewLore');
 
         let finalFile = null;
-        let finalCover = null;
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds || seconds <= 0) return '';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return mins + ':' + String(secs).padStart(2, '0');
+        }
+
+        // Live In-Game Tooltip Preview
+        function updateTooltipPreview() {
+            const nameVal = inputName.value.trim() || 'Custom Disc';
+            const authorVal = inputAuthor.value.trim() || 'Unknown Artist';
+            const loreVal = inputLore.value.trim();
+
+            previewName.textContent = '\u266B ' + nameVal + ' \u266B';
+            previewArtist.textContent = 'Artist: ' + authorVal;
+            if (loreVal) {
+                previewLore.style.display = 'block';
+                previewLore.textContent = loreVal;
+            } else {
+                previewLore.style.display = 'none';
+                previewLore.textContent = '';
+            }
+        }
+
+        inputName.addEventListener('input', updateTooltipPreview);
+        inputAuthor.addEventListener('input', updateTooltipPreview);
+        inputLore.addEventListener('input', updateTooltipPreview);
+        updateTooltipPreview();
 
         // Fetch discs on load
         fetchDiscs();
@@ -417,49 +1038,71 @@
         async function fetchDiscs() {
             try {
                 const res = await fetch('/api/discs');
+                if (!res.ok) throw new Error('Failed');
                 const data = await res.json();
                 renderDiscs(data);
             } catch (e) {
-                discList.innerText = "Failed to load inventory.";
+                discList.innerHTML = '<div class="empty-state">Failed to load inventory.</div>';
             }
         }
 
+        const defaultDiscSvgDataUrl =
+            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='2' width='6' height='12' fill='%23282828'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23282828'/%3E%3Crect x='2' y='5' width='12' height='6' fill='%23282828'/%3E%3Crect x='6' y='6' width='4' height='4' fill='%23f0c83c'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23000'/%3E%3C/svg%3E";
+
         function renderDiscs(discs) {
+            discCountBadge.textContent = discs.length + (discs.length === 1 ? ' Disc' : ' Discs');
             if (discs.length === 0) {
-                discList.innerHTML = "<p style='color:#94a3b8; font-size:1.2rem;'>No discs forged yet.</p>";
+                discList.innerHTML = '<div class="empty-state">Chest is empty. Forge your first disc!</div>';
                 return;
             }
-            let html = "<ul style='list-style:none; padding:0;'>";
+            let html = '<ul class="disc-list">';
             discs.forEach(d => {
+                const dur = formatDuration(d.durationSeconds);
+                const safeId = escapeHtml(d.id);
+                const safeName = escapeHtml(d.name);
+                const safeAuthor = escapeHtml(d.author);
                 html += `
-                <li style="background:#0f172a; border:2px solid #334155; border-radius:6px; padding:8px 12px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <img src="/api/disc/${d.id}/cover" style="width:36px; height:36px; image-rendering:pixelated; border:2px solid #38bdf8; border-radius:4px; background:#111;" onerror="this.style.display='none'">
-                        <span><span style="color:#38bdf8; font-size:1.3rem; font-weight:bold;">${d.name}</span> <span style="color:#facc15; font-size:1.1rem;">by ${d.author}</span></span>
+                <li class="disc-row">
+                    <div class="disc-row-left">
+                        <div class="mc-item-slot">
+                            <img src="/api/disc/${encodeURIComponent(d.id)}/cover" alt="${safeName}" onerror="this.onerror=null;this.src='${defaultDiscSvgDataUrl}';">
+                        </div>
+                        <div class="disc-meta">
+                            <div class="disc-title">${safeName}</div>
+                            <div class="disc-sub">by ${safeAuthor}${dur ? `<span class="disc-dur">[${dur}]</span>` : ''}</div>
+                        </div>
                     </div>
-                    <button class="btn btn-small" style="width:auto; padding:4px 10px; font-size:1.1rem; background:linear-gradient(180deg, #dc2626 0%, #991b1b 100%); border-color:#f87171;" onclick="deleteDisc('${d.id}')">🗑️ Destroy</button>
+                    <button type="button" class="mc-btn mc-btn-red mc-btn-sm" onclick="deleteDisc('${safeId}')">Destroy</button>
                 </li>`;
             });
-            html += "</ul>";
+            html += '</ul>';
             discList.innerHTML = html;
         }
 
         async function deleteDisc(id) {
-            if (!confirm("Destroy this disc?")) return;
+            if (!confirm('Destroy this disc?')) return;
             try {
-                const res = await fetch('/api/disc/' + id, { method: 'DELETE' });
+                const res = await fetch('/api/disc/' + encodeURIComponent(id), { method: 'DELETE' });
                 if (res.ok) {
-                    showToast("Disc Destroyed");
+                    showToast('Disc Destroyed', 'Removed from inventory');
                     fetchDiscs();
                 } else {
-                    showToast("Error Destroying");
+                    showToast('Error', 'Could not destroy disc');
                 }
             } catch (e) {
-                showToast("Connection Error");
+                showToast('Connection Error', 'Server unreachable');
             }
         }
 
         // --- Audio Drag & Drop ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
@@ -488,29 +1131,37 @@
             fileNameDisplay.innerText = file.name;
 
             const lower = file.name.toLowerCase();
-            if (lower.endsWith('.mp3') || lower.endsWith('.ogg')) {
+            const allowed = ['.mp3', '.ogg', '.wav', '.flac', '.m4a'];
+            if (allowed.some(ext => lower.endsWith(ext))) {
                 finalFile = file;
                 converterStatus.style.display = 'block';
-                converterStatus.style.color = '#55ff55';
-                converterStatus.innerText = "Ready to Upload (Server will Convert)";
+                converterStatus.innerText = 'Audio Loaded (Ready to Forge)';
             } else {
-                alert("Only .mp3 or .ogg files allowed!");
-                fileNameDisplay.innerText = "Drag & Drop .mp3 or .ogg";
+                alert('Supported audio formats: .ogg, .mp3, .wav, .flac, .m4a');
+                fileNameDisplay.innerText = 'Drag & Drop .mp3 or .ogg';
                 converterStatus.style.display = 'none';
             }
         }
 
-        // --- Pixel Art Studio Studio Engine ---
+        // --- Pixel Art Studio Engine ---
         const discCanvas = document.getElementById('discCanvas');
+        const guideCanvas = document.getElementById('guideCanvas');
+        const canvasStage = document.getElementById('canvasStage');
         const ctx = discCanvas ? discCanvas.getContext('2d') : null;
+        const guideCtx = guideCanvas ? guideCanvas.getContext('2d') : null;
         const drawColorInput = document.getElementById('drawColor');
         const randomizeBtn = document.getElementById('randomizeBtn');
+        const resetBtn = document.getElementById('resetBtn');
         const toolPencil = document.getElementById('toolPencil');
         const toolFill = document.getElementById('toolFill');
         const toolEraser = document.getElementById('toolEraser');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomLevelText = document.getElementById('zoomLevelText');
 
-        let currentTool = 'pencil'; // 'pencil', 'fill', 'erase'
+        let currentTool = 'pencil';
         let isDrawing = false;
+        let hoverCell = null;
         let pixelGrid = Array(16).fill(null).map(() => Array(16).fill('transparent'));
 
         function setTool(tool) {
@@ -519,27 +1170,36 @@
             if (tool === 'pencil') toolPencil.classList.add('active-tool');
             if (tool === 'fill') toolFill.classList.add('active-tool');
             if (tool === 'erase') toolEraser.classList.add('active-tool');
+            drawGuideOverlay();
         }
 
         if (toolPencil) toolPencil.addEventListener('click', () => setTool('pencil'));
         if (toolFill) toolFill.addEventListener('click', () => setTool('fill'));
         if (toolEraser) toolEraser.addEventListener('click', () => setTool('erase'));
 
-        // Swatches
-        document.querySelectorAll('.swatch').forEach(swatch => {
+        const swatches = document.querySelectorAll('.swatch');
+        swatches.forEach(swatch => {
             swatch.addEventListener('click', () => {
                 const color = swatch.getAttribute('data-color');
-                if (drawColorInput) drawColorInput.value = color;
+                if (drawColorInput && color) drawColorInput.value = color;
+                swatches.forEach(s => s.classList.remove('active-swatch'));
+                swatch.classList.add('active-swatch');
                 if (currentTool === 'erase') setTool('pencil');
             });
         });
 
-        // Initialize with default random disc pattern
+        if (drawColorInput) {
+            drawColorInput.addEventListener('input', () => {
+                swatches.forEach(s => s.classList.remove('active-swatch'));
+                if (currentTool === 'erase') setTool('pencil');
+            });
+        }
+
         randomizeDiscPattern();
 
         function randomizeDiscPattern() {
             pixelGrid = Array(16).fill(null).map(() => Array(16).fill('transparent'));
-            
+
             const vinylColors = ['#282828', '#b42828', '#288c3c', '#2850b4', '#8c28a0', '#c88c28'];
             const labelColors = ['#f0c83c', '#e6e6e6', '#f06428', '#3cdddd', '#a0e650', '#ff66cc'];
 
@@ -554,13 +1214,13 @@
                     const distSq = dx * dx + dy * dy;
 
                     if (distSq <= 1.0) {
-                        pixelGrid[y][x] = '#000000'; // Spindle Hole
+                        pixelGrid[y][x] = '#000000';
                     } else if (distSq <= 10.0) {
-                        pixelGrid[y][x] = label; // Center Label
+                        pixelGrid[y][x] = label;
                     } else if (distSq <= 48.0) {
-                        pixelGrid[y][x] = (x + y) % 3 === 0 ? darkVinyl : vinyl; // Vinyl Groves
+                        pixelGrid[y][x] = (x + y) % 3 === 0 ? darkVinyl : vinyl;
                     } else if (distSq <= 56.0) {
-                        pixelGrid[y][x] = '#111111'; // Outer Rim
+                        pixelGrid[y][x] = '#111111';
                     }
                 }
             }
@@ -568,12 +1228,12 @@
         }
 
         function adjustColorBrightness(hex, percent) {
-            let num = parseInt(hex.replace("#",""), 16),
-                amt = Math.round(2.55 * percent),
-                R = (num >> 16) + amt,
-                G = (num >> 8 & 0x00FF) + amt,
-                B = (num & 0x0000FF) + amt;
-            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+            const num = parseInt(hex.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
 
         function redrawGridCanvas() {
@@ -589,20 +1249,76 @@
             }
         }
 
-        // --- Zoom Controls ---
-        const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-        const zoomLevelText = document.getElementById('zoomLevelText');
+        // Non-destructive guide overlay (never baked into exported disc PNG)
+        function drawGuideOverlay() {
+            if (!guideCtx) return;
+            const cell = 16; // 256 / 16
+            guideCtx.clearRect(0, 0, 256, 256);
 
-        let currentZoomIndex = 0; // 0 = 1x (140px), 1 = 1.5x (200px), 2 = 2x (260px)
-        const zoomSizes = [140, 200, 260];
-        const zoomLabels = ['1x', '1.5x', '2x'];
+            for (let y = 0; y < 16; y++) {
+                for (let x = 0; x < 16; x++) {
+                    const px = x * cell;
+                    const py = y * cell;
+                    if (!isInsideDisc(x, y)) {
+                        // Dim non-paintable corners outside the disc silhouette
+                        guideCtx.fillStyle = 'rgba(10, 10, 10, 0.58)';
+                        guideCtx.fillRect(px, py, cell, cell);
+                    } else {
+                        // Subtle pixel grid lines inside paintable disc area
+                        guideCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+                        guideCtx.lineWidth = 1;
+                        guideCtx.strokeRect(px + 0.5, py + 0.5, cell - 1, cell - 1);
+                    }
+                }
+            }
+
+            // Crisp perimeter outline around paintable disc boundary
+            guideCtx.fillStyle = currentTool === 'erase' ? 'rgba(235, 235, 235, 0.72)' : 'rgba(210, 210, 210, 0.42)';
+            const rim = 1.5;
+            for (let y = 0; y < 16; y++) {
+                for (let x = 0; x < 16; x++) {
+                    if (!isInsideDisc(x, y)) continue;
+                    const px = x * cell;
+                    const py = y * cell;
+                    if (y === 0 || !isInsideDisc(x, y - 1)) guideCtx.fillRect(px, py, cell, rim);
+                    if (y === 15 || !isInsideDisc(x, y + 1)) guideCtx.fillRect(px, py + cell - rim, cell, rim);
+                    if (x === 0 || !isInsideDisc(x - 1, y)) guideCtx.fillRect(px, py, rim, cell);
+                    if (x === 15 || !isInsideDisc(x + 1, y)) guideCtx.fillRect(px + cell - rim, py, rim, cell);
+                }
+            }
+
+            // Center spindle hole guide
+            guideCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            guideCtx.lineWidth = 1;
+            guideCtx.strokeRect(7 * cell + 0.5, 7 * cell + 0.5, cell * 2 - 1, cell * 2 - 1);
+
+            // Live hovered pixel highlight
+            if (hoverCell) {
+                const { x, y } = hoverCell;
+                const px = x * cell;
+                const py = y * cell;
+                if (isInsideDisc(x, y)) {
+                    guideCtx.strokeStyle = currentTool === 'erase' ? '#ff7c73' : '#efe070';
+                    guideCtx.lineWidth = 2;
+                    guideCtx.strokeRect(px + 1, py + 1, cell - 2, cell - 2);
+                } else {
+                    guideCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                    guideCtx.lineWidth = 1;
+                    guideCtx.strokeRect(px + 1, py + 1, cell - 2, cell - 2);
+                }
+            }
+        }
+
+        // --- Zoom Controls ---
+        let currentZoomIndex = 0;
+        const zoomSizes = [144, 192, 256, 336, 416];
+        const zoomLabels = ['1x', '1.5x', '2x', '3x', '4x'];
 
         function updateCanvasZoom() {
-            if (!discCanvas) return;
+            if (!canvasStage) return;
             const pxSize = zoomSizes[currentZoomIndex];
-            discCanvas.style.width = pxSize + 'px';
-            discCanvas.style.height = pxSize + 'px';
+            canvasStage.style.width = pxSize + 'px';
+            canvasStage.style.height = pxSize + 'px';
             if (zoomLevelText) zoomLevelText.innerText = zoomLabels[currentZoomIndex];
         }
 
@@ -631,12 +1347,10 @@
             return { x: Math.max(0, Math.min(15, x)), y: Math.max(0, Math.min(15, y)) };
         }
 
-        const resetBtn = document.getElementById('resetBtn');
-
         function isInsideDisc(x, y) {
             const dx = x - 7.5;
             const dy = y - 7.5;
-            return (dx * dx + dy * dy) <= 56.25; // Circle radius 7.5 pixels
+            return (dx * dx + dy * dy) <= 56.25;
         }
 
         function resetDiscPattern() {
@@ -648,13 +1362,13 @@
                     const distSq = dx * dx + dy * dy;
 
                     if (distSq <= 1.0) {
-                        pixelGrid[y][x] = '#000000'; // Spindle Hole
+                        pixelGrid[y][x] = '#000000';
                     } else if (distSq <= 10.0) {
-                        pixelGrid[y][x] = '#f0c83c'; // Center Label
+                        pixelGrid[y][x] = '#f0c83c';
                     } else if (distSq <= 48.0) {
-                        pixelGrid[y][x] = '#282828'; // Classic Black Vinyl Body
+                        pixelGrid[y][x] = '#282828';
                     } else if (distSq <= 56.0) {
-                        pixelGrid[y][x] = '#111111'; // Outer Rim
+                        pixelGrid[y][x] = '#111111';
                     }
                 }
             }
@@ -662,7 +1376,7 @@
         }
 
         function applyPaint(x, y) {
-            if (!isInsideDisc(x, y)) return; // Prevent painting outside circular disc boundary!
+            if (!isInsideDisc(x, y)) return;
             const color = currentTool === 'erase' ? 'transparent' : drawColorInput.value;
             if (currentTool === 'fill') {
                 floodFill(x, y, pixelGrid[y][x], color);
@@ -678,7 +1392,7 @@
             while (queue.length > 0) {
                 const { x, y } = queue.pop();
                 if (x < 0 || x >= 16 || y < 0 || y >= 16) continue;
-                if (!isInsideDisc(x, y)) continue; // Keep flood fill strictly within disc circle
+                if (!isInsideDisc(x, y)) continue;
                 if (pixelGrid[y][x] === targetColor) {
                     pixelGrid[y][x] = fillColor;
                     queue.push({ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 });
@@ -687,19 +1401,32 @@
         }
 
         if (discCanvas) {
-            discCanvas.addEventListener('mousedown', (e) => {
+            discCanvas.addEventListener('pointerdown', (e) => {
                 isDrawing = true;
-                const { x, y } = getPixelCoords(e);
-                applyPaint(x, y);
+                discCanvas.setPointerCapture(e.pointerId);
+                const coords = getPixelCoords(e);
+                hoverCell = coords;
+                applyPaint(coords.x, coords.y);
+                drawGuideOverlay();
             });
-            discCanvas.addEventListener('mousemove', (e) => {
+            discCanvas.addEventListener('pointermove', (e) => {
+                const coords = getPixelCoords(e);
+                if (!hoverCell || hoverCell.x !== coords.x || hoverCell.y !== coords.y) {
+                    hoverCell = coords;
+                    drawGuideOverlay();
+                }
                 if (isDrawing && currentTool !== 'fill') {
-                    const { x, y } = getPixelCoords(e);
-                    applyPaint(x, y);
+                    applyPaint(coords.x, coords.y);
                 }
             });
-            window.addEventListener('mouseup', () => { isDrawing = false; });
+            discCanvas.addEventListener('pointerleave', () => {
+                hoverCell = null;
+                drawGuideOverlay();
+            });
+            window.addEventListener('pointerup', () => { isDrawing = false; });
         }
+
+        drawGuideOverlay();
 
         if (randomizeBtn) randomizeBtn.addEventListener('click', randomizeDiscPattern);
         if (resetBtn) resetBtn.addEventListener('click', resetDiscPattern);
@@ -709,14 +1436,13 @@
             e.preventDefault();
 
             if (!finalFile) {
-                alert("Please select an audio file first.");
+                alert('Please select an audio file first.');
                 return;
             }
 
-            const btn = document.querySelector('.btn');
-            const originalText = btn.innerText;
-            btn.innerText = "Uploading & Processing...";
-            btn.disabled = true;
+            const originalText = forgeBtn.innerText;
+            forgeBtn.innerText = 'Forging Disc...';
+            forgeBtn.disabled = true;
 
             try {
                 const formData = new FormData();
@@ -726,7 +1452,6 @@
                 formData.append('style', form.elements.style.value);
                 formData.append('file', finalFile);
 
-                // Auto export canvas design as cover image blob
                 const coverBlob = await new Promise(resolve => discCanvas.toBlob(resolve, 'image/png'));
                 if (coverBlob) {
                     formData.append('cover', coverBlob, 'disc.png');
@@ -738,10 +1463,11 @@
                 });
 
                 if (res.ok) {
-                    showToast("Success! Disc Forged.");
+                    showToast('Advancement Made!', 'Disc forged & pack updated');
                     form.reset();
-                    renderCanvasDisc();
-                    fileNameDisplay.innerText = "Drag & Drop .mp3 or .ogg";
+                    updateTooltipPreview();
+                    randomizeDiscPattern();
+                    fileNameDisplay.innerText = 'Drag & Drop .mp3 or .ogg';
                     finalFile = null;
                     converterStatus.style.display = 'none';
                     fetchDiscs();
@@ -750,23 +1476,26 @@
                     if (res.status === 501) {
                         alert("Server Error: FFmpeg is missing on the server.\nPlease ask the admin to install 'ffmpeg'.");
                     } else {
-                        alert("Error: " + txt);
+                        alert('Error: ' + txt);
                     }
                 }
             } catch (err) {
-                showToast("Connection Error");
+                showToast('Connection Error', 'Failed to reach server');
             } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
+                forgeBtn.innerText = originalText;
+                forgeBtn.disabled = false;
             }
         });
 
-        function showToast(msg) {
-            toast.innerText = msg;
-            toast.style.display = 'block';
-            setTimeout(() => {
+        let toastTimer = null;
+        function showToast(title, body) {
+            toastHeading.innerText = title;
+            toastBody.innerText = body;
+            toast.style.display = 'flex';
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
                 toast.style.display = 'none';
-            }, 3000);
+            }, 3200);
         }
     </script>
 </body>

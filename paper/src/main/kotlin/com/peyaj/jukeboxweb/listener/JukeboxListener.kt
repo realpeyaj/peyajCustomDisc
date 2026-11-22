@@ -31,7 +31,9 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         val durationSeconds: Int,
         val name: String,
         val author: String,
-        val discId: String
+        val discId: String,
+        var lastDancePulseAt: Long = 0L,
+        val notifiedParrots: MutableSet<UUID> = mutableSetOf()
     )
     private val activeJukeboxes = mutableMapOf<Location, PlayingSession>()
     private val loopingJukeboxes = mutableSetOf<Location>()
@@ -134,16 +136,17 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
             // Stop existing custom session & remove holograms
             stopMusicAtLocationWithSound(block.location, existingDiscId)
 
-            // Drop the custom disc item into the world
-            block.world.dropItemNaturally(block.location.clone().add(0.5, 1.0, 0.5), existingRecord!!)
-            
-            // Clear jukebox record
+            // Clear jukebox record before dropping to ensure single atomic eject
             try {
                 jukebox.inventory.clear()
             } catch (e: Exception) {
                 try { jukebox.setRecord(null) } catch (ignored: Exception) {}
             }
             jukebox.update(true, false)
+
+            // Drop the custom disc item into the world
+            val dropItem = existingRecord!!.clone().apply { amount = 1 }
+            block.world.dropItemNaturally(block.location.clone().add(0.5, 1.0, 0.5), dropItem)
 
             // FIX: If the player clicked with a vanilla disc in hand, Bedrock (Geyser) might predict its insertion and play it.
             // Since we cancelled the event to pop out the custom disc, we MUST forcefully stop the vanilla disc sound client-side.
@@ -339,6 +342,7 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         
         // Dual-path stop: Adventure API for Java, /stopsound for Bedrock
         stopCustomDiscSound(world, location, discId)
+        stopNearbyDancing(world, location)
         
         stopVisuals(location)
     }
@@ -432,6 +436,13 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
                         return@Runnable
                     }
                 }
+
+                // Pulse dancing every 3s (matches vanilla 60-tick interval for nearby allays & parrots)
+                val nowMs = System.currentTimeMillis()
+                if (nowMs - session.lastDancePulseAt >= 3000L) {
+                    session.lastDancePulseAt = nowMs
+                    pulseNearbyDancing(world, location, session.name, session.notifiedParrots)
+                }
             }
             
             // Custom Particles (only spawn if players are within viewing range)
@@ -446,7 +457,83 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
             
         }, 0L, 10L)
 
-        activeJukeboxes[location] = PlayingSession(task.taskId, holoJava.uniqueId, holoBedrock.uniqueId, System.currentTimeMillis(), duration, discName, author, discId)
+        val newSession = PlayingSession(
+            task.taskId,
+            holoJava.uniqueId,
+            holoBedrock.uniqueId,
+            System.currentTimeMillis(),
+            duration,
+            discName,
+            author,
+            discId,
+            lastDancePulseAt = System.currentTimeMillis()
+        )
+        activeJukeboxes[location] = newSession
+        pulseNearbyDancing(world, location, discName, newSession.notifiedParrots)
+    }
+
+    private fun pulseNearbyDancing(
+        world: org.bukkit.World,
+        location: Location,
+        discName: String,
+        notifiedParrots: MutableSet<UUID>
+    ) {
+        val center = location.clone().add(0.5, 0.5, 0.5)
+        try {
+            world.sendGameEvent(null, org.bukkit.GameEvent.JUKEBOX_PLAY, center.toVector())
+        } catch (ignored: Exception) {}
+
+        world.getNearbyEntities(center, 10.0, 10.0, 10.0).forEach { entity ->
+            if (entity is org.bukkit.entity.Allay && !entity.isDancing) {
+                try {
+                    entity.startDancing(location)
+                } catch (ignored: Exception) {}
+            }
+        }
+
+        val nearbyNewParrots = world.getNearbyEntities(center, 3.5, 3.5, 3.5).filter { entity ->
+            entity is org.bukkit.entity.Parrot && notifiedParrots.add(entity.uniqueId)
+        }
+        if (nearbyNewParrots.isNotEmpty()) {
+            val range = getJukeboxRange()
+            val msg = Component.text("Now Playing: $discName", NamedTextColor.AQUA)
+            world.getNearbyPlayers(location, range).forEach { p ->
+                if (!com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)) {
+                    p.playEffect(location, org.bukkit.Effect.RECORD_PLAY, Material.MUSIC_DISC_13)
+                    p.stopSound("minecraft:music_disc.13", SoundCategory.RECORDS)
+                    p.stopSound("music_disc.13", SoundCategory.RECORDS)
+                    p.sendActionBar(msg)
+                }
+            }
+        }
+    }
+
+    private fun stopNearbyDancing(world: org.bukkit.World, location: Location) {
+        val center = location.clone().add(0.5, 0.5, 0.5)
+        try {
+            world.sendGameEvent(null, org.bukkit.GameEvent.JUKEBOX_STOP_PLAY, center.toVector())
+        } catch (ignored: Exception) {}
+
+        world.getNearbyEntities(center, 12.0, 12.0, 12.0).forEach { entity ->
+            if (entity is org.bukkit.entity.Allay && entity.isDancing) {
+                val jukeboxLoc = try { entity.jukebox } catch (ignored: Exception) { null }
+                if (jukeboxLoc == null || jukeboxLoc.block.location == location.block.location) {
+                    try {
+                        entity.stopDancing()
+                    } catch (ignored: Exception) {}
+                }
+            }
+        }
+
+        val hasParrots = world.getNearbyEntities(center, 4.5, 4.5, 4.5).any { it is org.bukkit.entity.Parrot }
+        if (hasParrots) {
+            val range = getJukeboxRange()
+            world.getNearbyPlayers(location, range).forEach { p ->
+                if (!com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)) {
+                    p.playEffect(location, org.bukkit.Effect.SOUND_STOP_JUKEBOX_SONG, 0)
+                }
+            }
+        }
     }
     
     private fun configureHologram(hologram: TextDisplay, discName: String, author: String, looping: Boolean) {
