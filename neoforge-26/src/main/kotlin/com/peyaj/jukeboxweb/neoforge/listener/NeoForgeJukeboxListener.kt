@@ -29,10 +29,13 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent
 import net.neoforged.neoforge.event.tick.ServerTickEvent
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 object NeoForgeJukeboxListener {
 
     private const val DANCE_EVENT_INTERVAL_TICKS = 60
+    private val SILENT_SONG_ID = Identifier.fromNamespaceAndPath("peyajcustomdisc", "silent")
+    private val STOP_RETRY_TICKS = intArrayOf(1, 2, 4, 8, 15)
 
     private data class JukeboxKey(
         val worldKey: ResourceKey<Level>,
@@ -48,10 +51,20 @@ object NeoForgeJukeboxListener {
         var danceTickCounter: Int = 0
     )
 
+    private data class PendingVanillaStop(
+        val worldKey: ResourceKey<Level>,
+        val center: Vec3,
+        val soundId: Identifier,
+        val nowPlayingMsg: Component,
+        var ticksElapsed: Int = 0
+    )
+
     private val activeJukeboxes = ConcurrentHashMap<JukeboxKey, PlayingSession>()
+    private val pendingVanillaStops = CopyOnWriteArrayList<PendingVanillaStop>()
 
     fun clearSessions() {
         activeJukeboxes.clear()
+        pendingVanillaStops.clear()
     }
 
     fun register() {
@@ -143,6 +156,7 @@ object NeoForgeJukeboxListener {
         // Periodic tick update: particle emissions, mob dancing pulse, and session expiration
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post::class.java) { event ->
             val server = event.server
+            processPendingVanillaStops(server)
             val expiredOrBroken = mutableListOf<JukeboxKey>()
 
             activeJukeboxes.forEach { (key, session) ->
@@ -236,8 +250,8 @@ object NeoForgeJukeboxListener {
     }
 
     /**
-     * Triggers client-side parrot dance via level event 1010 only when a non-dancing parrot is in range,
-     * then immediately cancels the dummy vanilla song sound and restores the custom Now Playing title.
+     * Triggers client-side parrot dance via level event 1010 using the silent datapack JukeboxSong
+     * so zero vanilla disc audio starts. Falls back to multi-tick StopSound retries only if absent.
      */
     private fun notifyNewNearbyParrots(world: ServerLevel, pos: BlockPos, discName: String, discAuthor: String) {
         val parrotBox = AABB(pos).inflate(3.5)
@@ -247,20 +261,62 @@ object NeoForgeJukeboxListener {
         parrotsToStart.forEach { it.setRecordPlayingNearby(pos, true) }
 
         val songRegistry = world.registryAccess().lookupOrThrow(Registries.JUKEBOX_SONG)
+        val nowPlayingMsg = buildNowPlayingText(discName, discAuthor)
+        val center = Vec3.atCenterOf(pos)
+
+        val silentSong = songRegistry.getValue(SILENT_SONG_ID)
+        val silentRawId = if (silentSong != null) songRegistry.getId(silentSong) else -1
+        if (silentRawId >= 0) {
+            world.levelEvent(null, 1010, pos, silentRawId)
+            world.players().forEach { p ->
+                if (p.distanceToSqr(center) <= 4096.0) {
+                    p.sendSystemMessage(nowPlayingMsg, true)
+                }
+            }
+            return
+        }
+
         val firstSong = songRegistry.get(0)
         if (firstSong.isPresent) {
             val vanillaSoundId = firstSong.get().value().soundEvent().value().location()
             world.levelEvent(null, 1010, pos, 0)
 
             val stopPacket = ClientboundStopSoundPacket(vanillaSoundId, SoundSource.RECORDS)
-            val nowPlayingMsg = buildNowPlayingText(discName, discAuthor)
-            val center = Vec3.atCenterOf(pos)
             world.players().forEach { p ->
                 if (p.distanceToSqr(center) <= 4096.0) {
                     p.connection.send(stopPacket)
                     p.sendSystemMessage(nowPlayingMsg, true)
                 }
             }
+            pendingVanillaStops.add(PendingVanillaStop(world.dimension(), center, vanillaSoundId, nowPlayingMsg))
+        }
+    }
+
+    private fun processPendingVanillaStops(server: net.minecraft.server.MinecraftServer) {
+        if (pendingVanillaStops.isEmpty()) return
+        val completed = mutableListOf<PendingVanillaStop>()
+        for (entry in pendingVanillaStops) {
+            entry.ticksElapsed++
+            if (entry.ticksElapsed in STOP_RETRY_TICKS) {
+                val world = server.getLevel(entry.worldKey)
+                if (world != null) {
+                    val stopPacket = ClientboundStopSoundPacket(entry.soundId, SoundSource.RECORDS)
+                    world.players().forEach { p ->
+                        if (p.distanceToSqr(entry.center) <= 4096.0) {
+                            p.connection.send(stopPacket)
+                            if (entry.ticksElapsed == 1) {
+                                p.sendSystemMessage(entry.nowPlayingMsg, true)
+                            }
+                        }
+                    }
+                }
+            }
+            if (entry.ticksElapsed >= 15) {
+                completed.add(entry)
+            }
+        }
+        if (completed.isNotEmpty()) {
+            pendingVanillaStops.removeAll(completed.toSet())
         }
     }
 

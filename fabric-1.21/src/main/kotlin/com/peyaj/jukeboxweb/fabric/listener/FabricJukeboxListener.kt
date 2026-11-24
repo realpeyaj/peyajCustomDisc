@@ -28,10 +28,13 @@ import net.minecraft.util.math.Vec3d
 import net.minecraft.world.World
 import net.minecraft.world.event.GameEvent
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 object FabricJukeboxListener {
 
     private const val DANCE_EVENT_INTERVAL_TICKS = 60
+    private val SILENT_SONG_ID = Identifier.of("peyajcustomdisc", "silent")
+    private val STOP_RETRY_TICKS = intArrayOf(1, 2, 4, 8, 15)
 
     private data class JukeboxKey(
         val worldKey: RegistryKey<World>,
@@ -47,7 +50,16 @@ object FabricJukeboxListener {
         var danceTickCounter: Int = 0
     )
 
+    private data class PendingVanillaStop(
+        val worldKey: RegistryKey<World>,
+        val center: Vec3d,
+        val soundId: Identifier,
+        val nowPlayingMsg: Text,
+        var ticksElapsed: Int = 0
+    )
+
     private val activeJukeboxes = ConcurrentHashMap<JukeboxKey, PlayingSession>()
+    private val pendingVanillaStops = CopyOnWriteArrayList<PendingVanillaStop>()
 
     fun register() {
         UseBlockCallback.EVENT.register { player, world, hand, hitResult ->
@@ -131,6 +143,7 @@ object FabricJukeboxListener {
 
         // Periodic tick update: particle emissions, mob dancing pulse, and session expiration
         ServerTickEvents.END_SERVER_TICK.register { server ->
+            processPendingVanillaStops(server)
             val expiredOrBroken = mutableListOf<JukeboxKey>()
             activeJukeboxes.forEach { (key, session) ->
                 val world = server.getWorld(key.worldKey)
@@ -221,8 +234,8 @@ object FabricJukeboxListener {
     }
 
     /**
-     * Triggers client-side parrot dance via world event 1010 only when a non-dancing parrot is in range,
-     * then immediately cancels the dummy vanilla song sound and restores the custom Now Playing title.
+     * Triggers client-side parrot dance via world event 1010 using the silent datapack JukeboxSong
+     * so zero vanilla disc audio starts. Falls back to multi-tick StopSound retries only if absent.
      */
     private fun notifyNewNearbyParrots(world: ServerWorld, pos: BlockPos, discName: String, discAuthor: String) {
         val parrotBox = Box(pos).expand(3.5)
@@ -232,20 +245,62 @@ object FabricJukeboxListener {
         parrotsToStart.forEach { it.setNearbySongPlaying(pos, true) }
 
         val songRegistry = world.registryManager.get(RegistryKeys.JUKEBOX_SONG)
+        val nowPlayingMsg = buildNowPlayingText(discName, discAuthor)
+        val center = Vec3d.ofCenter(pos)
+
+        val silentSong = songRegistry.get(SILENT_SONG_ID)
+        val silentRawId = if (silentSong != null) songRegistry.getRawId(silentSong) else -1
+        if (silentRawId >= 0) {
+            world.syncWorldEvent(null, 1010, pos, silentRawId)
+            world.players.forEach { p ->
+                if (p.squaredDistanceTo(center) <= 4096.0) {
+                    p.sendMessage(nowPlayingMsg, true)
+                }
+            }
+            return
+        }
+
         val firstSong = songRegistry.getEntry(0)
         if (firstSong.isPresent) {
             val vanillaSoundId = firstSong.get().value().soundEvent().value().id
             world.syncWorldEvent(null, 1010, pos, 0)
 
             val stopPacket = StopSoundS2CPacket(vanillaSoundId, SoundCategory.RECORDS)
-            val nowPlayingMsg = buildNowPlayingText(discName, discAuthor)
-            val center = Vec3d.ofCenter(pos)
             world.players.forEach { p ->
                 if (p.squaredDistanceTo(center) <= 4096.0) {
                     p.networkHandler.sendPacket(stopPacket)
                     p.sendMessage(nowPlayingMsg, true)
                 }
             }
+            pendingVanillaStops.add(PendingVanillaStop(world.registryKey, center, vanillaSoundId, nowPlayingMsg))
+        }
+    }
+
+    private fun processPendingVanillaStops(server: net.minecraft.server.MinecraftServer) {
+        if (pendingVanillaStops.isEmpty()) return
+        val completed = mutableListOf<PendingVanillaStop>()
+        for (entry in pendingVanillaStops) {
+            entry.ticksElapsed++
+            if (entry.ticksElapsed in STOP_RETRY_TICKS) {
+                val world = server.getWorld(entry.worldKey)
+                if (world != null) {
+                    val stopPacket = StopSoundS2CPacket(entry.soundId, SoundCategory.RECORDS)
+                    world.players.forEach { p ->
+                        if (p.squaredDistanceTo(entry.center) <= 4096.0) {
+                            p.networkHandler.sendPacket(stopPacket)
+                            if (entry.ticksElapsed == 1) {
+                                p.sendMessage(entry.nowPlayingMsg, true)
+                            }
+                        }
+                    }
+                }
+            }
+            if (entry.ticksElapsed >= 15) {
+                completed.add(entry)
+            }
+        }
+        if (completed.isNotEmpty()) {
+            pendingVanillaStops.removeAll(completed.toSet())
         }
     }
 

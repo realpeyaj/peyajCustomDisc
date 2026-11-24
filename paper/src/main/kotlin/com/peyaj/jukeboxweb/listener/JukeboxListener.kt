@@ -497,13 +497,43 @@ class JukeboxListener(private val plugin: PeyajCustomDisc) : Listener {
         if (nearbyNewParrots.isNotEmpty()) {
             val range = getJukeboxRange()
             val msg = Component.text("Now Playing: $discName", NamedTextColor.AQUA)
-            world.getNearbyPlayers(location, range).forEach { p ->
-                if (!com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)) {
-                    p.playEffect(location, org.bukkit.Effect.RECORD_PLAY, Material.MUSIC_DISC_13)
-                    p.stopSound("minecraft:music_disc.13", SoundCategory.RECORDS)
-                    p.stopSound("music_disc.13", SoundCategory.RECORDS)
+            val javaPlayers = world.getNearbyPlayers(location, range).filter { p ->
+                !com.peyaj.jukeboxweb.geyser.GeyserHandler.isBedrockPlayer(p)
+            }
+            if (javaPlayers.isEmpty()) return
+
+            val silentSong = try {
+                org.bukkit.Registry.JUKEBOX_SONG.get(org.bukkit.NamespacedKey("peyajcustomdisc", "silent"))
+            } catch (_: Throwable) {
+                null
+            }
+            if (silentSong != null) {
+                javaPlayers.forEach { p ->
+                    p.playEffect(location, org.bukkit.Effect.RECORD_PLAY, silentSong)
                     p.sendActionBar(msg)
                 }
+                return
+            }
+
+            javaPlayers.forEach { p ->
+                p.playEffect(location, org.bukkit.Effect.RECORD_PLAY, Material.MUSIC_DISC_13)
+                p.stopSound("minecraft:music_disc.13", SoundCategory.RECORDS)
+                p.stopSound("music_disc.13", SoundCategory.RECORDS)
+                p.sendActionBar(msg)
+            }
+            // Retry stopping the dummy vanilla disc across early ticks because client OGG stream loading is async
+            for (delayTicks in longArrayOf(1L, 2L, 4L, 8L, 15L)) {
+                Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+                    javaPlayers.forEach { p ->
+                        if (p.isOnline) {
+                            p.stopSound("minecraft:music_disc.13", SoundCategory.RECORDS)
+                            p.stopSound("music_disc.13", SoundCategory.RECORDS)
+                            if (delayTicks == 1L) {
+                                p.sendActionBar(msg)
+                            }
+                        }
+                    }
+                }, delayTicks)
             }
         }
     }

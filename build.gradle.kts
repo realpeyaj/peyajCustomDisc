@@ -13,7 +13,7 @@ plugins {
 
 allprojects {
     group = "com.peyaj"
-    val baseVersion = "2.7"
+    val baseVersion = "2.7.1"
     val buildNumber = System.getenv("BUILD_NUMBER")
     version = if (!buildNumber.isNullOrBlank()) "$baseVersion-b$buildNumber" else baseVersion
 
